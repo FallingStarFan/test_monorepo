@@ -1,0 +1,254 @@
+// ============================================================
+// Auth Enums
+// ============================================================
+
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+
+  @@schema("auth")
+}
+
+
+// ============================================================
+// App
+// ============================================================
+
+// 系統中的應用程式，例如 Drawer、Booking、Canvas
+model App {
+
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+
+  // App 擁有的角色，例如 USER、VIP、ADMIN
+  roles       Role[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("apps")
+  @@schema("auth")
+}
+
+
+// ============================================================
+// Role
+// ============================================================
+
+
+// App 內的角色，例如 Drawer 的 USER、VIP、ADMIN
+model Role {
+
+  id          String   @id @default(uuid()) @db.Uuid
+
+  // 此 Role 所屬的 App
+  appId       String   @db.Uuid
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  // 擁有此 Role 的 User
+  users       UserRole[]
+
+  // 此 Role 被授予的權限；權限檢查只會沿著這條關聯走，不另外查表
+  permissions RolePermission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 同一個 App 內不能有重複的 Role 名稱
+  @@unique([appId, name])
+
+  // 查詢 App 的所有 Role
+  @@index([appId])
+
+  @@map("roles")
+  @@schema("auth")
+}
+
+
+
+// ============================================================
+// User
+// ============================================================
+
+model User {
+  id            String     @id @default(uuid()) @db.Uuid
+  email         String?    @unique
+  emailVerified Boolean    @default(false)
+  name          String?
+  image         String?
+  role          UserRole[] 
+  status        UserStatus @default(ACTIVE)
+
+  password UserPassword?
+  accounts OauthAccount[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+  @@schema("auth")
+}
+
+
+
+// ============================================================
+// User Role
+// ============================================================
+
+// User 與 Role 的多對多關聯
+model UserRole {
+
+  // 被授予 Role 的 User
+  userId String @db.Uuid
+
+  // User 被授予的 Role
+  roleId String @db.Uuid
+
+  // User 關聯
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Role 關聯
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // 同一個 User 不能重複取得相同 Role
+  @@id([userId, roleId])
+
+  // 方便查詢某個 Role 有哪些 User
+  @@index([roleId])
+
+  @@map("user_roles")
+  @@schema("auth")
+}
+
+// ============================================================
+// Password
+// ============================================================
+
+model UserPassword {
+  id           String @id @default(uuid()) @db.Uuid
+  userId       String @unique @db.Uuid
+  passwordHash String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_passwords")
+  @@schema("auth")
+}
+
+// ============================================================
+// OAuth Account
+// ============================================================
+
+model OauthAccount {
+  id                String @id @default(uuid()) @db.Uuid
+  userId            String @db.Uuid
+  provider          String
+  providerAccountId String
+  email             String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+  @@schema("auth")
+}
+
+// ============================================================
+// Session
+// ============================================================
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+  @@schema("auth")
+}
+
+// ============================================================
+// Permission
+// ============================================================
+
+// 細粒度權限碼，例如 permission:read、billing:plan:write。
+//
+// 刻意與 Role 放在同一個 auth schema：Prisma 的關聯只能建立在同一個 schema
+// 內的兩個 model 之間，RolePermission 要同時關聯 Role 與 Permission，
+// 一旦把 Permission 拆到別的 schema，RolePermission 就會被迫跨 schema 關聯，
+// 多檔案 schema 的關聯解析會直接失敗。因此這裡以「資料表歸屬」優先於
+// 「語意歸屬」來決定 schema。
+model Permission {
+
+  id          String   @id @default(uuid()) @db.Uuid
+
+  // 權限碼，採 resource:action 形式，讓 Guard 能以字串直接比對，
+  // 不需要額外的 id 對照表就能讀懂「這個端點需要什麼權限」
+  code        String   @unique
+  name        String
+  description String?
+
+  // 擁有此權限的 Role
+  roles       RolePermission[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("permissions")
+  @@schema("auth")
+}
+
+// ============================================================
+// Role Permission
+// ============================================================
+
+// Role 與 Permission 的多對多關聯。
+//
+// 使用複合主鍵而非獨立 id：指派關係冪等（重複指派只會是同一個主鍵），
+// 也就不需要在 service 層先查再寫，避免併發下的重複資料。
+model RolePermission {
+
+  // 被授予權限的 Role
+  roleId       String @db.Uuid
+
+  // 授予的權限
+  permissionId String @db.Uuid
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+
+  // 同一個 Role 不能重複取得相同權限
+  @@id([roleId, permissionId])
+
+  // 方便查詢某個權限被哪些 Role 使用
+  @@index([permissionId])
+
+  @@map("role_permissions")
+  @@schema("auth")
+}

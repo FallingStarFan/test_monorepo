@@ -1,0 +1,65 @@
+
+/// Object Storage 檔案 Metadata。
+///
+/// 僅儲存檔案資訊與 Object Storage 定位資訊，
+/// 實際檔案內容不儲存在 PostgreSQL。
+model StoredFileMeta {
+  /// 檔案 Metadata 的唯一識別碼。
+  id           String   @id @default(uuid())
+
+  /// Object Storage 中的唯一物件 Key。
+  objectKey    String   @unique
+
+  /// Object Storage Bucket 識別碼。
+  bucketId     String?
+
+  /// 使用者上傳時的原始檔名。
+  originalName String?
+
+  /// 檔案 MIME Type，例如 image/png、application/pdf。
+  mimeType     String?
+
+  /// 檔案大小，單位為 bytes。
+  bytes        BigInt?
+
+  /// Object Storage 回傳的 ETag。
+  etag         String?
+
+  /// 檔案內容的 Checksum，用於完整性驗證。
+  checksum     String?
+
+  /// 關聯資源的類型，例如 drawer、menu、booking。
+  ///
+  /// 僅作為應用層邏輯關聯，不建立 Database Foreign Key。
+  relationType String?
+
+  /// 關聯資源的唯一識別碼。
+  ///
+  /// 實際對應的資源由 relationType + relationId 決定。
+  /// 不建立 Database Foreign Key，由應用層負責維護關聯。
+  relationId   String?
+
+  /// Metadata 建立時間。
+  createdAt    DateTime @default(now())
+
+  /// Metadata 最後更新時間。
+  updatedAt    DateTime @updatedAt
+
+  /// 軟刪除時間。
+  ///
+  /// 設定後不立即刪除 Object Storage 中的實體檔案。
+  /// 由後續 purge 流程在保留期限到期後清理檔案與 Metadata。
+  deletedAt    DateTime?
+
+  /// 依關聯資源查詢檔案。
+  @@index([relationType, relationId])
+
+  /// 加速查詢待清理的軟刪除檔案。
+  @@index([deletedAt])
+
+  /// PostgreSQL Schema。
+  @@schema("file")
+
+  /// PostgreSQL Table 名稱。
+  @@map("stored_file_meta")
+}

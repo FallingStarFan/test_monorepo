@@ -1,0 +1,141 @@
+// ============================================================
+// Email Notification Log
+// ============================================================
+
+/// Email 通知寄送紀錄。
+///
+/// 用於保存系統寄送 Email 的歷史資料，
+/// 主要用途為 Audit、除錯、寄送紀錄查詢與問題追蹤。
+///
+/// 實際 Email 寄送由 Notification Service 與 Email Provider 負責。
+model EmailNotificationLog {
+  /// 通知紀錄唯一識別碼。
+  id          String   @id @default(uuid())
+
+  /// 觸發此次通知的使用者 ID。
+  ///
+  /// 僅作為應用層邏輯關聯，不建立 Database Foreign Key。
+  /// 系統排程或系統自動通知可能沒有觸發者。
+  actorUserId String?
+
+  /// 觸發通知時的使用者 Email 快照。
+  ///
+  /// 保存當下的 Email，避免使用者後續修改 Email
+  /// 後無法還原當時的寄送資訊。
+  actorEmail  String?
+
+  /// Email 實際收件者。
+  recipient   String
+
+  /// 使用的 Email Template 識別碼。
+  ///
+  /// 例如 email-verification、password-reset。
+  template    String?
+
+  /// 實際使用的 Email Provider。
+  ///
+  /// 例如 resend、sendgrid、ses。
+  /// 使用 String 以方便未來替換 Provider。
+  provider    String
+
+  /// Email Subject。
+  subject     String?
+
+  /// Email 純文字內容。
+  bodyText    String?
+
+  /// Email HTML 內容。
+  bodyHtml    String?
+
+  /// Email 附件 Metadata。
+  ///
+  /// 使用 JSONB 儲存附件資訊，不直接儲存檔案內容。
+  ///
+  /// 例如：
+  /// [
+  ///   {
+  ///     filename,
+  ///     contentType,
+  ///     bytes,
+  ///     objectKey,
+  ///     bucketId
+  ///   }
+  /// ]
+  attachments Json?
+
+  /// 通知紀錄建立時間。
+  createdAt   DateTime @default(now())
+
+  @@schema("notification")
+  @@map("email_notification_log")
+}
+
+
+// ============================================================
+// In-App Notification
+// ============================================================
+
+/// 使用者站內通知。
+///
+/// 用於保存顯示於 Web / App Notification Center 的通知。
+///
+/// 例如評論 @mention、專案邀請、Booking 狀態變更等。
+model AppNotification {
+  /// 通知唯一識別碼。
+  id          String    @id @default(uuid())
+
+  /// 接收通知的使用者 ID。
+  ///
+  /// 僅作為應用層邏輯關聯，不建立 Database Foreign Key。
+  userId      String
+
+  /// 通知類型。
+  ///
+  /// 例如 comment_mention、project_invite、booking_updated。
+  /// 使用 String 以方便未來擴充通知類型。
+  type        String
+
+  /// 通知標題。
+  title       String
+
+  /// 通知內容。
+  body        String?
+
+  /// 點擊通知後前往的前端 Path。
+  ///
+  /// 例如：
+  /// /project/video?contentId=xxx&commentId=xxx
+  ///
+  /// 儲存 Path 而非完整 URL，避免綁定特定 Domain。
+  linkPath    String
+
+  /// 觸發此次通知的使用者 ID。
+  ///
+  /// 僅作為應用層邏輯關聯，不建立 Database Foreign Key。
+  actorUserId String?
+
+  /// 觸發者顯示名稱快照。
+  ///
+  /// 保存通知建立當下的顯示名稱，
+  /// 避免使用者後續修改名稱後歷史通知內容跟著改變。
+  actorLabel  String?
+
+  /// 使用者閱讀通知的時間。
+  ///
+  /// null 代表尚未閱讀。
+  readAt      DateTime?
+
+  /// 通知建立時間。
+  createdAt   DateTime  @default(now())
+
+  /// 依使用者與建立時間查詢通知。
+  ///
+  /// 用於 Notification Center 最新通知列表。
+  @@index([userId, createdAt(sort: Desc)])
+
+  /// 依使用者與閱讀狀態查詢未讀通知。
+  @@index([userId, readAt])
+
+  @@schema("notification")
+  @@map("in_app_notification")
+}

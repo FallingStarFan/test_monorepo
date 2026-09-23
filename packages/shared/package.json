@@ -1,0 +1,26 @@
+{
+  "name": "@test/shared",
+  "version": "0.0.1",
+  "private": true,
+  "description": "前後端共用的型別與常數：集中定義可避免兩端各自宣告而逐漸漂移",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
