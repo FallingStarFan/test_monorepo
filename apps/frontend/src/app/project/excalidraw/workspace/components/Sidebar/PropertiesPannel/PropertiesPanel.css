@@ -1,0 +1,164 @@
+.properties-panel {
+  width: 260px;
+  padding: 12px;
+
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.properties-section {
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.properties-section:last-child {
+  border-bottom: 0;
+}
+
+.properties-section__title {
+  margin-bottom: 10px;
+
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.properties-field {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  align-items: center;
+
+  min-height: 36px;
+}
+
+.properties-field span {
+  color: #4b5563;
+}
+
+.properties-field input,
+.properties-field select {
+  width: 100%;
+  height: 32px;
+
+  padding: 0 8px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+
+  background: #fff;
+  color: #111827;
+
+  outline: none;
+}
+
+.properties-field input:focus,
+.properties-field select:focus {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.15);
+}
+
+.properties-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 8px;
+}
+
+.properties-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  flex: 1;
+}
+
+.properties-color input[type="color"] {
+  width: 32px;
+  height: 32px;
+
+  padding: 2px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+
+  background: white;
+  cursor: pointer;
+}
+
+.properties-color-input {
+  width: 90px;
+  height: 32px;
+
+  padding: 0 8px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+
+  font-family: monospace;
+  font-size: 12px;
+
+  outline: none;
+}
+
+.properties-slider {
+  display: block;
+
+  margin-bottom: 14px;
+}
+
+.properties-slider:last-child {
+  margin-bottom: 0;
+}
+
+.properties-slider > div {
+  display: flex;
+  justify-content: space-between;
+
+  margin-bottom: 7px;
+}
+
+.properties-slider strong {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.properties-slider input[type="range"] {
+  width: 100%;
+}
+
+.properties-layer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.properties-layer-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  height: 34px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+
+  background: #fff;
+  color: #4b5563;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.properties-layer-grid button:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #111827;
+}

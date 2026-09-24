@@ -1,0 +1,13 @@
+.sidebar-trigger.default-sidebar-trigger { 
+  display: none !important;   /* 隱藏右上角的library */
+}
+button[data-testid="main-menu-trigger"] {
+  display: none !important;
+}
+.excalidraw .App-toolbar {
+  display: none;
+}
+
+.App-menu__left {
+  display: none !important;
+}
