@@ -10,10 +10,10 @@ import { getServerSession } from '@/lib/server-session';
 
 export const metadata: Metadata = {
   title: {
-    default: 'test_monorepo 控制台',
-    template: '%s | test_monorepo',
+    default: 'XingFan Studio',
+    template: '%s | XingFan Studio',
   },
-  description: 'NestJS 後端與 Next.js 前端共用的全端控制台',
+  description: 'XingFan Studio 系列產品與服務總入口。',
 };
 
 /**

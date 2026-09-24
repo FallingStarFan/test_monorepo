@@ -92,6 +92,33 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/page2/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/page2">> = Specific
+  const handler = {} as typeof import("../../src/app/page2/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/page3/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/page3">> = Specific
+  const handler = {} as typeof import("../../src/app/page3/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/project/excalidraw/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/project/excalidraw">> = Specific
+  const handler = {} as typeof import("../../src/app/project/excalidraw/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/settings/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/settings">> = Specific
