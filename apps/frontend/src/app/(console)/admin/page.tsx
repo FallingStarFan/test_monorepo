@@ -64,7 +64,7 @@ function BackendUnavailableCard() {
     <NoticeCard
       icon={<ServerCrash className="size-4" />}
       title="無法連線到後端服務"
-      description=""
+      description="前端已啟動，但讀不到後端資料。請確認 apps/backend（預設 http://localhost:3013）是否正在執行，稍後重新整理即可。"
     />
   );
 }
@@ -78,7 +78,7 @@ function NoticeCard({
 }: {
   icon: React.ReactNode;
   title: string;
-  description?: string;
+  description: string;
   children?: React.ReactNode;
 }) {
   return (

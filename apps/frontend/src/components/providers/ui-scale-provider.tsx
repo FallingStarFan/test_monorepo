@@ -21,7 +21,7 @@ import {
 export const UI_SCALE_STEPS = [0.75, 0.875, 1, 1.125, 1.25, 1.5] as const;
 
 /** 瀏覽器預設根字級，縮放計算皆以此為基準。 */
-const BASE_FONT_SIZE = 16;
+const BASE_FONT_SIZE = 18;
 
 /**
  * localStorage 的鍵名。

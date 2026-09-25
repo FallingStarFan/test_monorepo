@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import './globals.css';
 
-import { AppShellBase } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { SessionProvider } from '@/components/providers/session-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { UiScaleProvider } from '@/components/providers/ui-scale-provider';
@@ -60,7 +60,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <UiScaleProvider>
             <SessionProvider initialSession={session}>
-              <AppShellBase>{children}</AppShellBase>
+              <AppShell>{children}</AppShell>
             </SessionProvider>
           </UiScaleProvider>
         </ThemeProvider>

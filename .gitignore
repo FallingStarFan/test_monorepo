@@ -19,7 +19,7 @@ coverage/
 .turbo/
 .cache/
 .vercel/
-
+**/.next/
 # Environment files
 .env
 .env.*

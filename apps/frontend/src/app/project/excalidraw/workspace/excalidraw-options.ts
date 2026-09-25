@@ -1,4 +1,5 @@
-import { ExcalidrawProps } from "@excalidraw/excalidraw/types";
+import type { ExcalidrawProps } from "@excalidraw/excalidraw/types";
+
 
 export const excalidrawOptions: ExcalidrawProps = {
   UIOptions: {

@@ -37,23 +37,12 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   {
     href: '/',
-    label: '控制台',
-    description: '目前有哪些 App 與其角色權限入口',
+    label: '多專案入口',
+    description: '',
     icon: LayoutDashboard,
     requiresAdmin: true,
   },
-  {
-    href: '/files',
-    label: '檔案',
-    description: '對應後端 public-service 的 file 模組',
-    icon: FileText,
-  },
-  {
-    href: '/notifications',
-    label: '通知',
-    description: '對應後端 public-service 的 notification 模組',
-    icon: Bell,
-  },
+ 
   {
     href: '/settings',
     label: '設定',
