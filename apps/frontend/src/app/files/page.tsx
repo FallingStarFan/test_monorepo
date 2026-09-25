@@ -7,7 +7,7 @@ import {
 import { FileText, LogIn, Upload } from 'lucide-react';
 import Link from 'next/link';
 
-import { FileUploadPanel } from '@/components/files/file-upload-panel';
+import { FileUploadPanel } from '@/components/features/files';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

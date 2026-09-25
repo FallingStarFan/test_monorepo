@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Keyboard, Monitor, Moon, Sun } from 'lucide-react';
 
 import { UiScaleControls } from '@/components/layout/ui-scale-controls';
@@ -39,8 +40,13 @@ const SHORTCUTS = [
 ];
 
 export default function SettingsPage() {
+  const [mounted, setMounted] = useState(false);
   const { scale, setScale, canIncrease, canDecrease } = useUiScale();
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,13 +102,14 @@ export default function SettingsPage() {
         <CardContent className="flex flex-wrap gap-2">
           {THEME_OPTIONS.map((option) => {
             const Icon = option.icon;
-            const active = theme === option.value;
+            const active = mounted && theme === option.value;
 
             return (
               <Button
                 key={option.value}
                 variant={active ? 'default' : 'outline'}
                 onClick={() => setTheme(option.value)}
+                disabled={!mounted}
               >
                 <Icon className="size-4" />
                 {option.label}

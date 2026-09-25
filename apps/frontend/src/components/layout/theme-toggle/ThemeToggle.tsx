@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
 
 import { useTheme, type Theme } from '@/components/providers/theme-provider';
@@ -26,7 +27,21 @@ const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
  * 強制指定單一主題反而與其習慣衝突。
  */
 export function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Button variant="outline" size="icon" aria-label="載入外觀設定" disabled>
+        <Sun className="size-4" />
+      </Button>
+    );
+  }
+
   const TriggerIcon = resolvedTheme === 'dark' ? Moon : Sun;
 
   return (

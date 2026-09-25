@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog } from "@/components/Dialog/Dialog";
+import { Dialog } from "@/components/common/dialog";
 import { useState } from "react";
 import type { CanvasController, CanvasSaveType } from "../../types";
 

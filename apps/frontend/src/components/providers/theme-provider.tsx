@@ -23,6 +23,7 @@ export function ThemeProvider({
       attribute="class"
       defaultTheme="system"
       enableSystem
+      enableColorScheme
       storageKey="test-monorepo.theme.v1"
       disableTransitionOnChange
     >

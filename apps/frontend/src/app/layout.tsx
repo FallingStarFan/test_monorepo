@@ -17,19 +17,14 @@ export const metadata: Metadata = {
 };
 
 /**
- * 於畫面繪製前先套用主題與縮放。
+ * 於畫面繪製前先套用 UI 縮放。
  *
  * 這段程式必須在 HTML 產生時同步執行，否則使用者會先看到預設主題與尺寸，
  * 接著才被 JS 修正，產生俗稱的閃爍（FOUC）。
  */
-const bootstrapScript = `
+const uiScaleBootstrapScript = `
 (function () {
   try {
-    var storedTheme = localStorage.getItem('test-monorepo.theme.v1');
-    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var isDark = storedTheme === 'dark' || (storedTheme !== 'light' && prefersDark);
-    document.documentElement.classList.toggle('dark', isDark);
-
     var storedScale = parseFloat(localStorage.getItem('test-monorepo.ui-scale.v1') || '1');
     if (!isNaN(storedScale) && storedScale > 0) {
       document.documentElement.style.fontSize = (16 * storedScale) + 'px';
@@ -55,11 +50,11 @@ export default async function RootLayout({
   const session = await getServerSession();
 
   return (
-    // suppressHydrationWarning：html 的 class 與 style 會在瀏覽器端由上述指令碼先行設定，
+    // suppressHydrationWarning：html 的 class 會由 next-themes、style 會由上述縮放指令碼在瀏覽器端設定，
     // 與伺服器輸出必然不同，這是刻意的，不需要警告。
     <html lang="zh-Hant" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: bootstrapScript }} />
+        <script dangerouslySetInnerHTML={{ __html: uiScaleBootstrapScript }} />
       </head>
       <body>
         <ThemeProvider>

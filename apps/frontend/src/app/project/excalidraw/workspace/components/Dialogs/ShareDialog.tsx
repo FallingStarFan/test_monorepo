@@ -1,4 +1,4 @@
-import { Dialog } from "@/components/Dialog/Dialog";
+import { Dialog } from "@/components/common/dialog";
 import { CanvasController } from "../../types";
 
 type ShareDialogProps = {
