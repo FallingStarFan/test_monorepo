@@ -2,8 +2,8 @@
 
 import { Minus, Plus, RotateCcw } from 'lucide-react';
 
-import { useUiScale } from '@/components/providers/ui-scale-provider';
-import { Button } from '@/components/ui/button';
+import { useUiScale } from '@/components/base/providers/ui-scale-provider';
+import { Button } from '@/components/base/button';
 import { cn } from '@/lib/utils';
 
 /**

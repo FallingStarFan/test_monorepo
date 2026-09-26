@@ -80,6 +80,8 @@ export const HTTP_STATUS = {
  * 因此路徑字串必須前後端共用同一份定義，避免兩邊各寫一次而逐漸漂移。
  */
 export const ADMIN_APPS_API_PATH = `${API_PREFIX}/admin/apps` as const;
+/** ???????? App ????????????? */
+export const REGISTERED_APPS_API_PATH = `${API_PREFIX}/apps` as const;
 export const MY_PERMISSION_API_PATH = `${API_PREFIX}/permissions/me` as const;
 export const FILE_UPLOAD_URL_API_PATH = `${API_PREFIX}/file/upload-url` as const;
 export const FILE_METADATA_API_PATH = `${API_PREFIX}/file` as const;

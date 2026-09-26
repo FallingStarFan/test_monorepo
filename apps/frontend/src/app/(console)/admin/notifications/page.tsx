@@ -1,16 +1,16 @@
 import type { AppNotification } from '@test/shared';
 import { Bell } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/base/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '@/components/base/card';
+import { Separator } from '@/components/base/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/base/tabs';
 
 /**
  * 通知模組頁面（骨架）。

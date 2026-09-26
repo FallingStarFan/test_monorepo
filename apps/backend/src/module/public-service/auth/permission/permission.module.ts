@@ -11,6 +11,7 @@ import { AdminRoleController } from './controllers/admin-role.controller.js';
 import { AdminRolePermissionController } from './controllers/admin-role-permission.controller.js';
 import { MyAppsController } from './controllers/my-apps.controller.js';
 import { MyPermissionController } from './controllers/my-permission.controller.js';
+import { RegisteredAppController } from './controllers/registered-app.controller.js';
 import { DashboardOverviewService } from './dashboard-overview.service.js';
 import { MyAppsService } from './my-apps.service.js';
 import { AuthenticatedGuard } from './guards/authenticated.guard.js';
@@ -45,6 +46,7 @@ import { RolePermissionService } from './role-permission.service.js';
     AdminPermissionController,
     AdminRolePermissionController,
     MyPermissionController,
+    RegisteredAppController,
     // App 入口清單：只需要登入，任何使用者都能取得自己的 App 清單
     MyAppsController,
   ],

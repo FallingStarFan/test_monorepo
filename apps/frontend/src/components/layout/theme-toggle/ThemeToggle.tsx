@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
 
-import { useTheme, type Theme } from '@/components/providers/theme-provider';
-import { Button } from '@/components/ui/button';
+import { useTheme, type Theme } from '@/components/base/providers/theme-provider';
+import { Button } from '@/components/base/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/base/dropdown-menu';
 
 const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: '淺色', icon: Sun },

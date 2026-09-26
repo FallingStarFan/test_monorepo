@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 import { AppShellBase } from '@/components/layout/app-shell';
-import { SessionProvider } from '@/components/providers/session-provider';
-import { ThemeProvider } from '@/components/providers/theme-provider';
-import { UiScaleProvider } from '@/components/providers/ui-scale-provider';
+import { SessionProvider } from '@/components/modules/auth/providers';
+import { ThemeProvider } from '@/components/base/providers/theme-provider';
+import { UiScaleProvider } from '@/components/base/providers/ui-scale-provider';
 import { getServerSession } from '@/lib/server-session';
 
 export const metadata: Metadata = {

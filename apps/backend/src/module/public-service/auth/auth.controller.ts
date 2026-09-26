@@ -162,7 +162,7 @@ Swagger 的 \`Execute\` 不適合直接測試此 Endpoint，
       path: '/auth',
     });
 
-    return res.redirect('/auth/google/start');
+    return res.redirect('/api/auth/google/start');
   }
 
   /**
@@ -323,7 +323,7 @@ Swagger 的 \`Execute\` 不適合直接測試此 Endpoint，
       path: '/auth',
     });
 
-    return res.redirect('/auth/github/start');
+    return res.redirect('/api/auth/github/start');
   }
 
   /**
@@ -433,10 +433,13 @@ GitHub OAuth 完成授權後的 Callback Endpoint。
       'Access token is missing, invalid, expired, or user is inactive.',
   })
   async me(@Req() req: Request) {
-    const token =
-      req.cookies?.access_token as
-        | string
-        | undefined;
+    const cookieToken = req.cookies?.access_token as string | undefined;
+    const authorization = req.headers.authorization;
+    const bearerToken = typeof authorization === 'string'
+      && authorization.startsWith('Bearer ')
+      ? authorization.slice('Bearer '.length).trim()
+      : undefined;
+    const token = cookieToken ?? bearerToken;
 
     if (!token) {
       throw new UnauthorizedException({

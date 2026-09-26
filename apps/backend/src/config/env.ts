@@ -31,8 +31,8 @@ const env = {
   githubClientId: requiredEnv('GITHUB_CLIENT_ID'),
   githubClientSecret: requiredEnv('GITHUB_CLIENT_SECRET'),
   // Oauth callback URL
-  googleCallbackUrl: `${frontendUrl}/auth/google/callback`,
-  githubCallbackUrl: `${frontendUrl}/auth/github/callback`,
+  googleCallbackUrl: `${backendUrl}/api/auth/google/callback`,
+  githubCallbackUrl: `${backendUrl}/api/auth/github/callback`,
 
   // JWT Configuration
   jwtAccessExpires: requiredEnv('JWT_ACCESS_EXPIRES'),

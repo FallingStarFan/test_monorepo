@@ -15,6 +15,8 @@ export interface SessionUser {
 
 /** 登入狀態回應。 */
 export interface SessionResponse {
+  /** ? UI ???????? JWT ???Token ??????????? */
+  authType: 'jwt' | 'anonymous';
   /** 是否已登入（由後端 /auth/me 的結果決定）。 */
   authenticated: boolean;
   user: SessionUser | null;
@@ -33,6 +35,7 @@ export interface SessionResponse {
 
 /** 未登入的預設狀態。 */
 export const ANONYMOUS_SESSION: SessionResponse = {
+  authType: 'anonymous',
   authenticated: false,
   user: null,
   roleNames: [],

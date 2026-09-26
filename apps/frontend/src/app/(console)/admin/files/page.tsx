@@ -7,16 +7,16 @@ import {
 import { FileText, LogIn, Upload } from 'lucide-react';
 import Link from 'next/link';
 
-import { FileUploadPanel } from '@/components/features/files';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { FileUploadPanel } from '@/components/modules/files';
+import { Badge } from '@/components/base/badge';
+import { Button } from '@/components/base/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/base/card';
 import {
   Table,
   TableBody,
@@ -24,7 +24,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/base/table';
 import { callBackendApi } from '@/lib/bff';
 
 /**

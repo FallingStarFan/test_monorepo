@@ -7,17 +7,17 @@ import { UiScaleControls } from '@/components/layout/ui-scale-controls';
 import {
   UI_SCALE_STEPS,
   useUiScale,
-} from '@/components/providers/ui-scale-provider';
-import { useTheme, type Theme } from '@/components/providers/theme-provider';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from '@/components/base/providers/ui-scale-provider';
+import { useTheme, type Theme } from '@/components/base/providers/theme-provider';
+import { Badge } from '@/components/base/badge';
+import { Button } from '@/components/base/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/base/card';
 import {
   Table,
   TableBody,
@@ -25,7 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/base/table';
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: '淺色', icon: Sun },

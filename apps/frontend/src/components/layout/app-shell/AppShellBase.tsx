@@ -10,7 +10,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from '@/components/base/sheet';
 
 type AppShellBaseProps = {
   sidebar?: ReactNode;

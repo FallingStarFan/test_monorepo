@@ -7,9 +7,9 @@ import { usePathname } from "next/navigation";
 
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UiScaleControls } from "@/components/layout/ui-scale-controls";
-import { useSession } from "@/components/providers/session-provider";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { useSession } from "@/components/modules/auth/providers";
+import { Button } from "@/components/base/button";
+import { Separator } from "@/components/base/separator";
 import { findNavItem } from "@/lib/navigation";
 import { resolveDisplayName } from "@/lib/session";
 
@@ -73,7 +73,7 @@ export function Header({
   </div>
 </div>
 
-      <UiScaleControls className="hidden sm:flex" />
+      {/* <UiScaleControls className="hidden sm:flex" /> */}
       <ThemeToggle />
 
       <Separator orientation="vertical" className="hidden h-6 sm:block" />

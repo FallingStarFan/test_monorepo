@@ -4,7 +4,7 @@ import { Boxes } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { useSession } from '@/components/providers/session-provider';
+import { useSession } from '@/components/modules/auth/providers';
 import { visibleNavItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
