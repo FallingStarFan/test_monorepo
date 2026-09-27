@@ -3,20 +3,20 @@ import {
   HTTP_STATUS,
   LOGIN_PAGE_PATH,
   type StoredFileMeta,
-} from '@test/shared';
-import { FileText, LogIn, Upload } from 'lucide-react';
-import Link from 'next/link';
+} from "@test/shared";
+import { FileText, LogIn, Upload } from "lucide-react";
+import Link from "next/link";
 
-import { FileUploadPanel } from '@/components/modules/files';
-import { Badge } from '@/components/base/badge';
-import { Button } from '@/components/base/button';
+import { FileUploadPanel } from "@/components/modules/files";
+import { Badge } from "@/components/base/badge";
+import { Button } from "@/components/base/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/base/card';
+} from "@/components/base/card";
 import {
   Table,
   TableBody,
@@ -24,8 +24,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/base/table';
-import { callBackendApi } from '@/lib/bff';
+} from "@/components/base/table";
+import { callBackendApi } from "@/lib/server-api";
 
 /**
  * 檔案模組頁面。
@@ -38,7 +38,7 @@ import { callBackendApi } from '@/lib/bff';
  * 下方的檔案清單目前仍是版面示意資料（後端 file 模組尚未提供列表 API），
  * 因此與上傳功能分開標示，不讓示意資料看起來像真實資料。
  */
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 interface CurrentUserPayload {
   user?: {
@@ -50,33 +50,33 @@ interface CurrentUserPayload {
 
 const SAMPLE_FILES: StoredFileMeta[] = [
   {
-    id: 'demo-1',
-    objectKey: 'uploads/2026/09/contract-sample.pdf',
-    bucketId: 'r2-default',
-    originalName: '合約範本.pdf',
-    mimeType: 'application/pdf',
-    bytes: 482_133,
-    etag: 'demo-etag-1',
+    id: "demo-1",
+    objectKey: "uploads/2026/09/contract-sample.pdf",
+    bucketId: "r2-default",
+    originalName: "合約範本.pdf",
+    mimeType: "application/pdf",
+    bytes: "482133",
+    etag: "demo-etag-1",
     checksum: null,
-    relationType: 'contract',
-    relationId: 'contract-1001',
-    createdAt: '2026-09-18T02:14:00.000Z',
-    updatedAt: '2026-09-18T02:14:00.000Z',
+    relationType: "contract",
+    relationId: "contract-1001",
+    createdAt: "2026-09-18T02:14:00.000Z",
+    updatedAt: "2026-09-18T02:14:00.000Z",
     deletedAt: null,
   },
   {
-    id: 'demo-2',
-    objectKey: 'uploads/2026/09/board-shot.png',
-    bucketId: 'r2-default',
-    originalName: '白板截圖.png',
-    mimeType: 'image/png',
-    bytes: 1_204_512,
-    etag: 'demo-etag-2',
+    id: "demo-2",
+    objectKey: "uploads/2026/09/board-shot.png",
+    bucketId: "r2-default",
+    originalName: "白板截圖.png",
+    mimeType: "image/png",
+    bytes: "1204512",
+    etag: "demo-etag-2",
     checksum: null,
-    relationType: 'canvas',
-    relationId: 'canvas-2001',
-    createdAt: '2026-09-20T08:41:00.000Z',
-    updatedAt: '2026-09-21T03:02:00.000Z',
+    relationType: "canvas",
+    relationId: "canvas-2001",
+    createdAt: "2026-09-20T08:41:00.000Z",
+    updatedAt: "2026-09-21T03:02:00.000Z",
     deletedAt: null,
   },
 ];
@@ -87,19 +87,18 @@ const SAMPLE_FILES: StoredFileMeta[] = [
  * 後端的 bytes 欄位為 BigInt，經 JSON 傳輸可能是字串，
  * 因此這裡同時接受字串與數字，避免前端顯示 NaN。
  */
-function formatBytes(bytes: StoredFileMeta['bytes']): string {
-  const value =
-    typeof bytes === 'string' ? Number.parseInt(bytes, 10) : bytes;
+function formatBytes(bytes: StoredFileMeta["bytes"]): string {
+  const value = typeof bytes === "string" ? Number.parseInt(bytes, 10) : bytes;
 
   if (value === null || value === undefined || Number.isNaN(value)) {
-    return '未知';
+    return "未知";
   }
 
   if (value < 1024) {
     return `${value} B`;
   }
 
-  const units = ['KB', 'MB', 'GB'];
+  const units = ["KB", "MB", "GB"];
   let size = value / 1024;
   let unitIndex = 0;
 
@@ -113,7 +112,7 @@ function formatBytes(bytes: StoredFileMeta['bytes']): string {
 
 /** 依預覽顯示需求縮短 objectKey，避免長路徑撐破表格。 */
 function shortenObjectKey(objectKey: string): string {
-  const segments = objectKey.split('/');
+  const segments = objectKey.split("/");
 
   if (segments.length <= 3) {
     return objectKey;
@@ -123,9 +122,7 @@ function shortenObjectKey(objectKey: string): string {
 }
 
 export default async function FilesPage() {
-  const me = await callBackendApi<CurrentUserPayload>(
-    AUTH_ME_API_PATH,
-  );
+  const me = await callBackendApi<CurrentUserPayload>(AUTH_ME_API_PATH);
 
   const authenticated = Boolean(
     me && me.status !== HTTP_STATUS.UNAUTHORIZED && me.payload?.user,
@@ -141,8 +138,8 @@ export default async function FilesPage() {
           </CardTitle>
           <CardDescription>
             {authenticated
-              ? '後端以 presigned URL 讓瀏覽器直接上傳到物件儲存，避免大檔經過 API 伺服器而佔用記憶體與頻寬。'
-              : '上傳需要登入。登入後才會顯示上傳入口。'}
+              ? "後端以 presigned URL 讓瀏覽器直接上傳到物件儲存，避免大檔經過 API 伺服器而佔用記憶體與頻寬。"
+              : "上傳需要登入。登入後才會顯示上傳入口。"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -192,15 +189,13 @@ export default async function FilesPage() {
               {SAMPLE_FILES.map((file) => (
                 <TableRow key={file.id}>
                   <TableCell className="font-medium">
-                    {file.originalName ?? '（未命名）'}
+                    {file.originalName ?? "（未命名）"}
                   </TableCell>
                   <TableCell className="hidden font-mono text-xs text-muted-foreground md:table-cell">
                     {shortenObjectKey(file.objectKey)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {file.mimeType ?? '未知'}
-                    </Badge>
+                    <Badge variant="outline">{file.mimeType ?? "未知"}</Badge>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatBytes(file.bytes)}

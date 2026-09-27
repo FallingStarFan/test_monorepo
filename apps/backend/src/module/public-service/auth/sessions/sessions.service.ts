@@ -1,29 +1,15 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+
 import { PrismaService } from '../../prisma.js';
-
-
 
 @Injectable()
 export class SessionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Create session.
-   *
-   * 為什麼：
-   * 使用者登入成功後，需要建立一個 Session，
-   * 用來管理這次登入狀態與過期時間。
-   */
-  async create(
-    userId: string,
-    tokenHash: string,
-    expiresAt: Date,
-  ) {
+  async create(id: string, userId: string, tokenHash: string, expiresAt: Date) {
     return this.prisma.session.create({
       data: {
+        id,
         userId,
         tokenHash,
         expiresAt,
@@ -31,16 +17,19 @@ export class SessionService {
     });
   }
 
-  /**
-   * Find active session.
-   *
-   * 為什麼：
-   * 驗證 Session 時，必須同時確認：
-   *
-   * 1. Token Hash 正確
-   * 2. 沒有被撤銷
-   * 3. 尚未過期
-   */
+  async findActiveById(id: string, userId: string) {
+    return this.prisma.session.findFirst({
+      where: {
+        id,
+        userId,
+        revokedAt: null,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+  }
+
   async findActiveByTokenHash(tokenHash: string) {
     return this.prisma.session.findFirst({
       where: {
@@ -54,42 +43,82 @@ export class SessionService {
   }
 
   /**
-   * Revoke session.
+   * Rotate a refresh token with compare-and-swap semantics.
    *
-   * 為什麼：
-   * 登出時不直接刪除 Session，
-   * 而是設定 revokedAt，保留 Session 紀錄。
+   * If a validly signed old token is replayed after rotation, the hash differs
+   * from the current value and the whole device session is revoked.
    */
-  async revoke(id: string) {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-      select: { id: true },
+  async rotateRefreshToken(input: {
+    id: string;
+    userId: string;
+    currentTokenHash: string;
+    nextTokenHash: string;
+    nextExpiresAt: Date;
+  }): Promise<void> {
+    const now = new Date();
+    const updated = await this.prisma.session.updateMany({
+      where: {
+        id: input.id,
+        userId: input.userId,
+        tokenHash: input.currentTokenHash,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: {
+        tokenHash: input.nextTokenHash,
+        expiresAt: input.nextExpiresAt,
+      },
     });
 
-    if (!session) {
-      throw new NotFoundException({
-        message: {
-          en: 'Session not found',
-          zh: '找不到登入 Session',
+    if (updated.count === 1) return;
+
+    const session = await this.prisma.session.findUnique({
+      where: { id: input.id },
+      select: {
+        userId: true,
+        tokenHash: true,
+        revokedAt: true,
+      },
+    });
+
+    if (
+      session &&
+      session.userId === input.userId &&
+      session.revokedAt === null &&
+      session.tokenHash !== input.currentTokenHash
+    ) {
+      await this.prisma.session.updateMany({
+        where: {
+          id: input.id,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: now,
         },
       });
     }
 
-    return this.prisma.session.update({
-      where: { id },
+    throw new UnauthorizedException({
+      message: {
+        en: 'Invalid, expired, or replayed refresh token',
+        zh: 'Refresh Token 無效、已過期或已被重放',
+      },
+    });
+  }
+
+  async revoke(id: string, userId?: string) {
+    return this.prisma.session.updateMany({
+      where: {
+        id,
+        userId,
+        revokedAt: null,
+      },
       data: {
         revokedAt: new Date(),
       },
     });
   }
 
-  /**
-   * Revoke all sessions.
-   *
-   * 為什麼：
-   * 當使用者選擇「全部裝置登出」時，
-   * 可以一次撤銷所有尚未撤銷的 Session。
-   */
   async revokeAllByUserId(userId: string) {
     return this.prisma.session.updateMany({
       where: {
@@ -102,13 +131,6 @@ export class SessionService {
     });
   }
 
-  /**
-   * Delete expired sessions.
-   *
-   * 為什麼：
-   * 過期 Session 已經沒有使用價值，
-   * 可以定期清理來避免資料庫一直累積。
-   */
   async deleteExpired() {
     return this.prisma.session.deleteMany({
       where: {
@@ -119,4 +141,3 @@ export class SessionService {
     });
   }
 }
-

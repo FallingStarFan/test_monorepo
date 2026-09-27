@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Query,
   Req,
@@ -11,37 +13,59 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-
 import {
   ApiBody,
+  ApiCookieAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
+import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 
+import type { AuthSessionData, AuthUser } from '@test/shared';
+
+import { AuthCookieService } from '@/config/auth-cookie.service.js';
 import env from '@/config/env.js';
+
 import type { OAuthProfile } from './auth.service.js';
 import { AuthService } from './auth.service.js';
 import {
   PasswordLoginDto,
   PasswordRegisterDto,
 } from './dto/password-auth.dto.js';
+import type { AuthenticatedRequest } from './permission/guards/authenticated.guard.js';
+import { AuthenticatedGuard } from './permission/guards/authenticated.guard.js';
+import {
+  GithubOAuthGuard,
+  GoogleOAuthGuard,
+} from './strategies/oauth-state.guard.js';
+
+type PublicUserSource = {
+  id: string;
+  email: string | null;
+  emailVerified: boolean;
+  name: string | null;
+  image: string | null;
+  status: AuthUser['status'];
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly authCookies: AuthCookieService,
   ) {}
 
   @Post('register')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @ApiOperation({
     summary: 'Register with email and password / 註冊帳密帳號',
-    description: '建立帳密帳號，成功後以 HttpOnly access_token cookie 登入。',
+    description:
+      '建立帳密帳號，成功後設定 access 與 refresh HttpOnly JWT Cookie。',
   })
   @ApiBody({ type: PasswordRegisterDto })
   @ApiResponse({ status: 201, description: '帳號建立並登入成功。' })
@@ -49,7 +73,7 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email 已存在。' })
   async register(
     @Body() dto: PasswordRegisterDto,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.register(
       dto.email,
@@ -57,495 +81,272 @@ export class AuthController {
       dto.name,
     );
 
-    this.setSessionCookie(
-      res,
-      result.accessToken.token,
-      result.accessToken.expiresAt,
-    );
-
-    return {
-      user: result.user,
-      accessToken: { expiresAt: result.accessToken.expiresAt },
-    };
+    this.setLoginCookies(response, result);
+    return this.publicLoginData(result);
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @ApiOperation({
     summary: 'Login with email and password / 帳密登入',
-    description: '驗證 Email 與密碼，成功後以 HttpOnly access_token cookie 登入。',
+    description: '驗證帳密並設定 access 與 refresh HttpOnly JWT Cookie。',
   })
   @ApiBody({ type: PasswordLoginDto })
-  @ApiResponse({ status: 201, description: '登入成功。' })
-  @ApiResponse({ status: 400, description: '請求資料格式錯誤。' })
-  @ApiResponse({ status: 401, description: 'Email、密碼錯誤或帳號不可登入。' })
+  @ApiResponse({ status: 200, description: '登入成功。' })
+  @ApiResponse({ status: 401, description: '帳密錯誤或帳號不可登入。' })
   async loginWithPassword(
     @Body() dto: PasswordLoginDto,
-    @Res({ passthrough: true }) res: Response,
+    @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.loginWithPassword(
       dto.email,
       dto.password,
     );
 
-    this.setSessionCookie(
-      res,
-      result.accessToken.token,
-      result.accessToken.expiresAt,
-    );
-
-    return {
-      user: result.user,
-      accessToken: { expiresAt: result.accessToken.expiresAt },
-    };
+    this.setLoginCookies(response, result);
+    return this.publicLoginData(result);
   }
 
-  // ============================================================
-  // Google OAuth
-  // ============================================================
-
-  /**
-   * 開始 Google OAuth 登入
-   *
-   * 此 Endpoint 負責：
-   *
-   * 1. 接收 returnTo
-   * 2. 將 returnTo 暫存在 HttpOnly Cookie
-   * 3. Redirect 到真正啟動 Passport 的 Endpoint
-   *
-   * 前端仍然使用：
-   *
-   * GET /auth/google
-   *
-   * 或：
-   *
-   * GET /auth/google?returnTo=/docs
-   */
   @Get('google')
   @ApiOperation({
-    summary: '開始 Google OAuth 登入',
-    description: `
-啟動 Google OAuth 登入流程。
-
-前端可以直接導向：
-
-\`GET /auth/google\`
-
-如果需要登入完成後回到指定頁面：
-
-\`GET /auth/google?returnTo=/docs\`
-
-returnTo 會暫存在 HttpOnly Cookie，
-OAuth 完成後再由 Callback 讀取。
-
-Swagger 的 \`Execute\` 不適合直接測試此 Endpoint，
-因為此 API 最終會將瀏覽器導向 Google OAuth 頁面。
-    `,
+    summary: 'Start Google OAuth / 啟動 Google OAuth',
+    description: '以瀏覽器導頁啟動 OAuth；returnTo 僅接受站內相對路徑。',
   })
-  @ApiResponse({
-    status: 302,
-    description: '導向 Google OAuth 授權流程。',
-  })
+  @ApiResponse({ status: 302, description: '導向 Google OAuth。' })
   googleLogin(
     @Query('returnTo') returnTo: string | undefined,
-    @Res() res: Response,
+    @Res() response: Response,
   ) {
-    const safeReturnTo =
-      this.getSafeReturnTo(returnTo);
-
-    res.cookie('oauth_return_to', safeReturnTo, {
-      httpOnly: true,
-      secure:
-        process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 10 * 60 * 1000,
-      path: '/auth',
-    });
-
-    return res.redirect('/api/auth/google/start');
+    return this.beginOAuth('google', returnTo, response);
   }
 
-  /**
-   * 真正啟動 Google Passport OAuth。
-   *
-   * 這裡才使用 AuthGuard('google')，
-   * 確保 oauth_return_to Cookie 已經先被設定。
-   */
   @Get('google/start')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({
-    summary: 'Google OAuth Callback',
-    description: `
-      本地測試 Google OAuth 登入流程：
-      1. 瀏覽器導向：
-        http://localhost:3013/api/auth/google?returnTo=%2Fdocs
-     
-      
-      Oauth 只能用url 測試  因為要跳轉到google 登入頁面 不能用swagger 測試
-      `,
-  })
+  @UseGuards(GoogleOAuthGuard)
   googleStart() {
-    // Passport 自動將瀏覽器導向 Google。
+    // Passport redirects to Google.
   }
 
-  /**
-   * Google OAuth Callback
-   *
-   * Google 完成授權後會回到：
-   *
-   * /auth/google/callback
-   *
-   * Google 的 callback URL 不需要因為 returnTo 而改變。
-   */
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({
-    summary: 'Google OAuth Callback',
-    description: `
-Google OAuth 完成授權後的 Callback Endpoint。
-
-流程：
-
-1. Google 完成使用者授權
-2. Google Redirect 至此 Endpoint
-3. Passport Google Strategy 驗證使用者
-4. 取得 OAuth Profile
-5. AuthService 建立或取得 User
-6. 簽發 Access Token
-7. Access Token 寫入 HttpOnly Cookie
-8. 讀取 oauth_return_to
-9. Redirect 回原本頁面
-    `,
-  })
-  @ApiResponse({
-    status: 302,
-    description:
-      'OAuth 登入成功，建立 Access Token Cookie 後重新導向前端。',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Google OAuth 驗證失敗。',
-  })
-  async googleCallback(
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const profile =
-      req.user as OAuthProfile;
-
-    const result =
-      await this.authService.loginWithOAuth(
-        profile,
-      );
-
-    this.setSessionCookie(
-      res,
-      result.accessToken.token,
-      result.accessToken.expiresAt,
-    );
-
-    const returnTo =
-      req.cookies?.oauth_return_to as
-        | string
-        | undefined;
-
-    console.log(
-      'Google OAuth returnTo:',
-      returnTo,
-    );
-
-    res.clearCookie(
-      'oauth_return_to',
-      {
-        httpOnly: true,
-        secure:
-          process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/auth',
-      },
-    );
-
-    return res.redirect(
-      `${env.webOrigin}${returnTo || '/'}`,
-    );
+  @UseGuards(GoogleOAuthGuard)
+  @ApiResponse({ status: 302, description: '設定 JWT Cookie 並導回前端。' })
+  @ApiResponse({ status: 401, description: 'OAuth 或 state 驗證失敗。' })
+  async googleCallback(@Req() request: Request, @Res() response: Response) {
+    return this.completeOAuth(request, response);
   }
 
-  // ============================================================
-  // GitHub OAuth
-  // ============================================================
-
-  /**
-   * 開始 GitHub OAuth 登入
-   *
-   * 前端仍然使用：
-   *
-   * GET /auth/github
-   *
-   * 或：
-   *
-   * GET /auth/github?returnTo=/docs
-   */
   @Get('github')
   @ApiOperation({
-    summary: '開始 GitHub OAuth 登入',
-    description: `
-啟動 GitHub OAuth 登入流程。
-
-前端可以直接導向：
-
-\`GET /auth/github\`
-
-如果需要登入完成後回到指定頁面：
-
-\`GET /auth/github?returnTo=/docs\`
-
-Swagger 的 \`Execute\` 不適合直接測試此 Endpoint，
-因為此 API 最終會將瀏覽器導向 GitHub OAuth 頁面。
-    `,
+    summary: 'Start GitHub OAuth / 啟動 GitHub OAuth',
+    description: '以瀏覽器導頁啟動 OAuth；returnTo 僅接受站內相對路徑。',
   })
-  @ApiResponse({
-    status: 302,
-    description: '導向 GitHub OAuth 授權流程。',
-  })
+  @ApiResponse({ status: 302, description: '導向 GitHub OAuth。' })
   githubLogin(
     @Query('returnTo') returnTo: string | undefined,
-    @Res() res: Response,
+    @Res() response: Response,
   ) {
-    const safeReturnTo =
-      this.getSafeReturnTo(returnTo);
-
-    res.cookie('oauth_return_to', safeReturnTo, {
-      httpOnly: true,
-      secure:
-        process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 10 * 60 * 1000,
-      path: '/auth',
-    });
-
-    return res.redirect('/api/auth/github/start');
+    return this.beginOAuth('github', returnTo, response);
   }
 
-  /**
-   * 真正啟動 GitHub Passport OAuth。
-   */
   @Get('github/start')
-  @UseGuards(AuthGuard('github'))
+  @UseGuards(GithubOAuthGuard)
   githubStart() {
-    // Passport 自動將瀏覽器導向 GitHub。
+    // Passport redirects to GitHub.
   }
 
-  /**
-   * GitHub OAuth Callback
-   */
   @Get('github/callback')
-  @UseGuards(AuthGuard('github'))
-  @ApiOperation({
-    summary: 'GitHub OAuth Callback',
-    description: `
-GitHub OAuth 完成授權後的 Callback Endpoint。
-
-流程：
-
-1. GitHub 完成使用者授權
-2. GitHub Redirect 至此 Endpoint
-3. Passport GitHub Strategy 驗證使用者
-4. 取得 OAuth Profile
-5. AuthService 建立或取得 User
-6. 簽發 Access Token
-7. Access Token 寫入 HttpOnly Cookie
-8. 讀取 oauth_return_to
-9. Redirect 回原本頁面
-    `,
-  })
-  @ApiResponse({
-    status: 302,
-    description:
-      'OAuth 登入成功，建立 Access Token Cookie 後重新導向前端。',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'GitHub OAuth 驗證失敗。',
-  })
-  async githubCallback(
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const profile =
-      req.user as OAuthProfile;
-
-    const result =
-      await this.authService.loginWithOAuth(
-        profile,
-      );
-
-    this.setSessionCookie(
-      res,
-      result.accessToken.token,
-      result.accessToken.expiresAt,
-    );
-
-    const returnTo =
-      req.cookies?.oauth_return_to as
-        | string
-        | undefined;
-
-    console.log(
-      'GitHub OAuth returnTo:',
-      returnTo,
-    );
-
-    res.clearCookie(
-      'oauth_return_to',
-      {
-        httpOnly: true,
-        secure:
-          process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/auth',
-      },
-    );
-
-    return res.redirect(
-      `${env.webOrigin}${returnTo || '/'}`,
-    );
+  @UseGuards(GithubOAuthGuard)
+  @ApiResponse({ status: 302, description: '設定 JWT Cookie 並導回前端。' })
+  @ApiResponse({ status: 401, description: 'OAuth 或 state 驗證失敗。' })
+  async githubCallback(@Req() request: Request, @Res() response: Response) {
+    return this.completeOAuth(request, response);
   }
 
-  // ============================================================
-  // Current User
-  // ============================================================
-
-  @Get('me')
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
   @ApiOperation({
-    summary:
-      'Get current user / 取得目前使用者',
+    summary: 'Rotate refresh JWT / 輪替 Refresh Token',
     description:
-      '驗證 HttpOnly `access_token` cookie，並回傳目前登入的 ACTIVE 使用者。',
+      '驗證 refresh HttpOnly Cookie 與 Session 雜湊，輪替 refresh JWT 並簽發短效 access JWT。',
   })
-  @ApiResponse({
-    status: 200,
-    description:
-      'Access token verified and current user returned.',
-  })
+  @ApiResponse({ status: 200, description: 'Token 輪替成功。' })
   @ApiResponse({
     status: 401,
-    description:
-      'Access token is missing, invalid, expired, or user is inactive.',
+    description: 'Refresh Token 無效、過期、撤銷或重放。',
   })
-  async me(@Req() req: Request) {
-    const cookieToken = req.cookies?.access_token as string | undefined;
-    const authorization = req.headers.authorization;
-    const bearerToken = typeof authorization === 'string'
-      && authorization.startsWith('Bearer ')
-      ? authorization.slice('Bearer '.length).trim()
-      : undefined;
-    const token = cookieToken ?? bearerToken;
+  async refresh(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = this.readCookie(request, env.refreshCookieName);
 
-    if (!token) {
+    if (!refreshToken) {
       throw new UnauthorizedException({
         message: {
-          en: 'Access token is missing',
-          zh: '缺少 Access Token',
+          en: 'Refresh token is missing',
+          zh: '缺少 Refresh Token',
         },
       });
     }
 
-    return this.authService.validateAccessToken(
-      token,
-    );
-  }
-
-  // ============================================================
-  // Logout
-  // ============================================================
-
-  @Post('logout')
-  @ApiOperation({
-    summary: 'Logout / 登出',
-    description:
-      '清除瀏覽器中的 JWT HttpOnly Cookie。已簽發的 JWT 仍會持續有效直到過期。',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'JWT cookie cleared.',
-  })
-  logout(
-    @Res({ passthrough: true })
-    res: Response,
-  ) {
-    res.clearCookie('access_token', {
-      httpOnly: true,
-      secure:
-        process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      domain:
-        process.env.NODE_ENV === 'production'
-          ? '.xingfan-studio.com'
-          : undefined,
-      path: '/',
-    });
+    const result = await this.authService.refresh(refreshToken);
+    this.setLoginCookies(response, result);
 
     return {
-      success: true,
+      accessToken: {
+        expiresAt: result.accessToken.expiresAt,
+      },
     };
   }
 
-  // ============================================================
-  // Helpers
-  // ============================================================
+  @Get('me')
+  @UseGuards(AuthenticatedGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Get current user / 取得目前使用者',
+    description: '驗證短效 access JWT 與其 Session，回傳 ACTIVE 使用者。',
+  })
+  @ApiResponse({ status: 200, description: '目前使用者。' })
+  @ApiResponse({
+    status: 401,
+    description: 'Access JWT 缺失、無效、過期或已撤銷。',
+  })
+  async me(@Req() request: AuthenticatedRequest) {
+    const user = await this.authService.getCurrentUser(
+      request.currentUserId as string,
+    );
 
-  /**
-   * 驗證 OAuth 登入完成後的 Redirect Path。
-   *
-   * 只允許站內相對路徑，例如：
-   *
-   * /login
-   * /docs
-   * /drawer/123
-   * /booking/456?foo=abc
-   *
-   * 不允許：
-   *
-   * https://example.com
-   * //example.com
-   */
-  private getSafeReturnTo(
-    returnTo?: string,
-  ): string {
-    if (!returnTo) {
-      return '/';
-    }
+    return this.toAuthSessionData(
+      user,
+      request.currentAccessTokenExpiresAt as Date,
+    );
+  }
 
-    if (!returnTo.startsWith('/')) {
-      return '/';
-    }
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Logout / 登出',
+    description:
+      '撤銷目前裝置的 JWT Session，並以相同選項清除 access/refresh Cookie。',
+  })
+  @ApiResponse({ status: 200, description: '目前裝置已登出。' })
+  async logout(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.logout({
+      accessToken:
+        this.readCookie(request, env.accessCookieName) ??
+        this.readBearerToken(request),
+      refreshToken: this.readCookie(request, env.refreshCookieName),
+    });
+    this.authCookies.clearLoginCookies(response);
 
-    if (returnTo.startsWith('//')) {
+    return { success: true };
+  }
+
+  private beginOAuth(
+    provider: 'google' | 'github',
+    returnTo: string | undefined,
+    response: Response,
+  ) {
+    const state = randomBytes(32).toString('base64url');
+
+    this.authCookies.setOAuthCookie(response, env.oauthStateCookieName, state);
+    this.authCookies.setOAuthCookie(
+      response,
+      env.oauthReturnToCookieName,
+      this.getSafeReturnTo(returnTo),
+    );
+
+    return response.redirect(
+      `/api/auth/${provider}/start?state=${encodeURIComponent(state)}`,
+    );
+  }
+
+  private async completeOAuth(request: Request, response: Response) {
+    const profile = request.user as OAuthProfile;
+    const returnTo =
+      this.readCookie(request, env.oauthReturnToCookieName) ?? '/';
+
+    this.authCookies.clearOAuthCookie(response, env.oauthStateCookieName);
+    this.authCookies.clearOAuthCookie(response, env.oauthReturnToCookieName);
+
+    const result = await this.authService.loginWithOAuth(profile);
+    this.setLoginCookies(response, result);
+
+    return response.redirect(
+      new URL(this.getSafeReturnTo(returnTo), env.frontendUrl).toString(),
+    );
+  }
+
+  private setLoginCookies(
+    response: Response,
+    result: {
+      accessToken: { token: string };
+      refreshToken: { token: string };
+    },
+  ): void {
+    this.authCookies.setLoginCookies(response, {
+      accessToken: result.accessToken.token,
+      refreshToken: result.refreshToken.token,
+    });
+  }
+
+  private publicLoginData(result: {
+    user: PublicUserSource;
+    accessToken: { expiresAt: Date };
+  }): AuthSessionData {
+    return this.toAuthSessionData(result.user, result.accessToken.expiresAt);
+  }
+
+  private toAuthSessionData(
+    user: PublicUserSource,
+    expiresAt: Date,
+  ): AuthSessionData {
+    const publicUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      name: user.name,
+      image: user.image,
+      status: user.status,
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
+    };
+
+    return {
+      user: publicUser,
+      accessToken: {
+        expiresAt: expiresAt.toISOString(),
+      },
+    };
+  }
+
+  private getSafeReturnTo(returnTo?: string): string {
+    if (
+      !returnTo ||
+      !returnTo.startsWith('/') ||
+      returnTo.startsWith('//') ||
+      returnTo.includes('\\')
+    ) {
       return '/';
     }
 
     return returnTo;
   }
 
-  /**
-   * 將 Access Token 放入 HttpOnly Cookie。
-   */
-  private setSessionCookie(
-    res: Response,
-    token: string,
-    expiresAt: Date,
-  ) {
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure:
-        process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      domain:
-        process.env.NODE_ENV === 'production'
-          ? '.xingfan-studio.com'
-          : undefined,
-      expires: expiresAt,
-      path: '/',
-    });
+  private readCookie(request: Request, name: string): string | undefined {
+    const value = request.cookies?.[name] as unknown;
+    return typeof value === 'string' && value ? value : undefined;
+  }
+
+  private readBearerToken(request: Request): string | undefined {
+    const authorization = request.headers.authorization;
+
+    if (!authorization?.startsWith('Bearer ')) return undefined;
+    return authorization.slice('Bearer '.length).trim() || undefined;
   }
 }

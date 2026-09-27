@@ -1,10 +1,4 @@
-import {
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Delete, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -15,9 +9,7 @@ import { successResponse } from '@/common/response/response.util.js';
 @ApiTags('Sessions')
 @Controller('sessions')
 export class SessionController {
-  constructor(
-    private readonly sessionService: SessionService,
-  ) {}
+  constructor(private readonly sessionService: SessionService) {}
 
   /**
    * Get active session.
@@ -38,13 +30,8 @@ Get an active session by token hash.
 根據 Token Hash 取得目前有效的 Session。
 `,
   })
-  async findActive(
-    @Param('tokenHash') tokenHash: string,
-  ) {
-    const session =
-      await this.sessionService.findActiveByTokenHash(
-        tokenHash,
-      );
+  async findActive(@Param('tokenHash') tokenHash: string) {
+    const session = await this.sessionService.findActiveByTokenHash(tokenHash);
 
     return successResponse(
       200,
@@ -71,11 +58,8 @@ Revoke a session.
 撤銷指定的登入 Session。
 `,
   })
-  async revoke(
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    const session =
-      await this.sessionService.revoke(id);
+  async revoke(@Param('id', ParseUUIDPipe) id: string) {
+    const session = await this.sessionService.revoke(id);
 
     return successResponse(
       200,
@@ -84,8 +68,7 @@ Revoke a session.
         zh: '撤銷 Session 成功',
       },
       {
-        id: session.id,
-        revokedAt: session.revokedAt,
+        count: session.count,
       },
     );
   }
@@ -106,13 +89,8 @@ Revoke all sessions belonging to a user.
 撤銷指定使用者的所有登入 Session。
 `,
   })
-  async revokeAll(
-    @Param('userId', ParseUUIDPipe) userId: string,
-  ) {
-    const result =
-      await this.sessionService.revokeAllByUserId(
-        userId,
-      );
+  async revokeAll(@Param('userId', ParseUUIDPipe) userId: string) {
+    const result = await this.sessionService.revokeAllByUserId(userId);
 
     return successResponse(
       200,

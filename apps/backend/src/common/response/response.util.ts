@@ -1,4 +1,4 @@
-import type { ApiMessage, ApiResponse } from './api-response.js';
+import type { ApiMessage, ApiResponse } from '@test/shared';
 
 export function successResponse<T>(
   statusCode: number,

@@ -2,29 +2,29 @@
 
 import { useState, type ReactNode } from 'react';
 
-import { Header } from '@/components/layout/header';
-import { SidebarNav } from '@/components/layout/sidebar-nav';
 import {
+  FooterBase,
+  Header,
+  ModalRenderer,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/base/sheet';
+  SidebarNav,
+} from '@/components';
 
 type AppShellBaseProps = {
   sidebar?: ReactNode;
   children: ReactNode;
 };
 
-
 export function AppShellBase({ sidebar, children }: AppShellBaseProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [desktopNavOpen, setDesktopNavOpen] = useState(true);
 
   return (
-    <div className="min-h-screen bg-muted/30 mx-auto w-[95%]">
-     {/* 1. 桌面側欄 */}
+    <div className="min-h-screen bg-muted/30">
       {sidebar && (
         <aside
           id="desktop-sidebar"
@@ -39,10 +39,9 @@ export function AppShellBase({ sidebar, children }: AppShellBaseProps) {
         </aside>
       )}
 
-      {/* 2. 只有側欄存在且展開時，才保留左側寬度 */}
       <div
         className={[
-          'flex min-h-screen flex-col',
+          'flex min-h-screen min-w-0 flex-col',
           'transition-[padding-left] duration-300 ease-in-out motion-reduce:transition-none',
           sidebar && desktopNavOpen ? 'lg:pl-sidebar' : 'lg:pl-0',
         ].join(' ')}
@@ -54,23 +53,14 @@ export function AppShellBase({ sidebar, children }: AppShellBaseProps) {
           onOpenMobileNav={() => setMobileNavOpen(true)}
         />
 
-        <main className="flex-1 pt-6">
-          {/* 3. 沒側欄時，main 內容佔可用寬度的 95% */}
-          <div
-            className={
-              sidebar
-                ? 'content-shell'
-                : 'mx-auto w-[95%]'
-            }
-          >
+        <main className="min-w-0 flex-1 pt-6">
+          <div className={sidebar ? 'content-shell' : 'mx-auto w-[95%]'}>
             {children}
+             <ModalRenderer />
           </div>
         </main>
 
-        <footer className="border-t bg-background px-4 py-4 text-center text-xs text-muted-foreground">
-          test_monorepo：NestJS 後端（apps/backend）與 Next.js 前端（apps/frontend）共用
-          packages/shared 的型別與常數。
-        </footer>
+        <FooterBase />
       </div>
 
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -79,6 +69,7 @@ export function AppShellBase({ sidebar, children }: AppShellBaseProps) {
             <SheetTitle>導覽</SheetTitle>
             <SheetDescription>選擇要前往的模組頁面</SheetDescription>
           </SheetHeader>
+
           <SidebarNav onNavigate={() => setMobileNavOpen(false)} />
         </SheetContent>
       </Sheet>

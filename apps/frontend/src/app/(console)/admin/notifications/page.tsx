@@ -1,16 +1,32 @@
-import type { AppNotification } from '@test/shared';
-import { Bell } from 'lucide-react';
+import { Bell } from "lucide-react";
 
-import { Badge } from '@/components/base/badge';
+import { Badge } from "@/components/base/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/base/card';
-import { Separator } from '@/components/base/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/base/tabs';
+} from "@/components/base/card";
+import { Separator } from "@/components/base/separator";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/base/tabs";
+type AppNotification = {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string | null;
+  linkPath: string;
+  actorUserId: string | null;
+  actorLabel: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
 
 /**
  * 通知模組頁面（骨架）。
@@ -18,50 +34,60 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/base/tabs
  * 以「全部 / 未讀」兩個頁籤呈現，是因為未讀數量是用戶最常關心的資訊，
  * 若只提供單一列表，使用者得自行掃描才能判斷是否有新通知。
  *
- * 目前為示意資料，型別沿用 @test/shared 的 AppNotification，
+ * 目前為示意資料，型別由此頁面擁有；
  * 待 API 串接後僅需替換資料來源。
  */
 const SAMPLE_NOTIFICATIONS: AppNotification[] = [
   {
-    id: 'note-1',
-    userId: 'user-1',
-    type: 'file.uploaded',
-    title: '檔案上傳完成',
-    body: '合約範本.pdf 已上傳至物件儲存。',
-    linkPath: '/files',
-    actorUserId: 'user-2',
-    actorLabel: '系統管理員',
+    id: "note-1",
+    userId: "user-1",
+    type: "file.uploaded",
+    title: "檔案上傳完成",
+    body: "合約範本.pdf 已上傳至物件儲存。",
+    linkPath: "/files",
+    actorUserId: "user-2",
+    actorLabel: "系統管理員",
     readAt: null,
-    createdAt: '2026-09-22T01:20:00.000Z',
+    createdAt: "2026-09-22T01:20:00.000Z",
   },
   {
-    id: 'note-2',
-    userId: 'user-1',
-    type: 'system.notice',
-    title: '權限模組尚未上線',
-    body: 'permission 模組完成後，此頁面將依角色顯示可存取的模組入口。',
-    linkPath: '/settings',
+    id: "note-2",
+    userId: "user-1",
+    type: "system.notice",
+    title: "權限模組尚未上線",
+    body: "permission 模組完成後，此頁面將依角色顯示可存取的模組入口。",
+    linkPath: "/settings",
     actorUserId: null,
     actorLabel: null,
-    readAt: '2026-09-22T02:00:00.000Z',
-    createdAt: '2026-09-21T09:05:00.000Z',
+    readAt: "2026-09-22T02:00:00.000Z",
+    createdAt: "2026-09-21T09:05:00.000Z",
   },
 ];
 
 /** 以統一的格式呈現時間，避免伺服器與瀏覽器時區差異造成顯示不一致。 */
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(iso).toLocaleString("zh-TW", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
-function NotificationList({ items, emptyText }: { items: AppNotification[]; emptyText: string }) {
+function NotificationList({
+  items,
+  emptyText,
+}: {
+  items: AppNotification[];
+  emptyText: string;
+}) {
   if (items.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">{emptyText}</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        {emptyText}
+      </p>
+    );
   }
 
   return (
@@ -78,11 +104,11 @@ function NotificationList({ items, emptyText }: { items: AppNotification[]; empt
                 ) : null}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {item.body ?? '（無內容）'}
+                {item.body ?? "（無內容）"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                來源：{item.actorLabel ?? '系統'} · {formatDateTime(item.createdAt)} ·
-                導向 {item.linkPath}
+                來源：{item.actorLabel ?? "系統"} ·{" "}
+                {formatDateTime(item.createdAt)} · 導向 {item.linkPath}
               </p>
             </div>
           </div>

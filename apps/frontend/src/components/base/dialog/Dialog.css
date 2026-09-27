@@ -1,7 +1,7 @@
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 50;
 
   display: flex;
   align-items: center;
@@ -51,11 +51,11 @@
 .dialog-close {
   width: 32px;
   height: 32px;
-
+  
   display: flex;
   align-items: center;
   justify-content: center;
-
+  margin-left: auto;
   border: 0;
   border-radius: 6px;
 

@@ -1,43 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { Profile, Strategy } from 'passport-github2';
 
-import {
-  Strategy,
-  Profile,
-} from 'passport-github2';
-
-// 💡 1. 移除 ConfigService，改引入您的靜態 env 物件
-// (請根據您的實際檔案路徑調整 import 路徑)
-
-
-import type { OAuthProfile } from '../auth.service.js';
 import env from '@/config/env.js';
 
-type OAuthVerifyCallback = (
-  error: unknown,
-  user?: OAuthProfile,
-) => void;
+import type { OAuthProfile } from '../auth.service.js';
+
+type OAuthVerifyCallback = (error: unknown, user?: OAuthProfile) => void;
 
 @Injectable()
-export class GithubStrategy extends PassportStrategy(
-  Strategy,
-  'github',
-) {
+export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
   constructor() {
-    // 💡 2. 移除 private readonly configService，constructor 保持空白
     super({
-      // 💡 3. 直接使用 env 物件，享有完美的型別安全與自動提示！
       clientID: env.githubClientId,
       clientSecret: env.githubClientSecret,
       callbackURL: env.githubCallbackUrl,
-
       scope: ['user:email'],
     });
   }
 
-  async validate(
-    accessToken: string,
-    refreshToken: string,
+  validate(
+    _accessToken: string,
+    _refreshToken: string,
     profile: Profile,
     done: OAuthVerifyCallback,
   ) {
@@ -45,6 +29,9 @@ export class GithubStrategy extends PassportStrategy(
       provider: 'github',
       providerAccountId: profile.id,
       email: profile.emails?.[0]?.value,
+      // passport-github2 does not expose verified email metadata. Existing
+      // accounts therefore require an explicit linking flow instead of auto-link.
+      emailVerified: false,
       name: profile.displayName || profile.username,
       image: profile.photos?.[0]?.value,
     };

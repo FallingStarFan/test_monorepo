@@ -1,16 +1,8 @@
-import type { ApiResponse } from '@test/shared';
-import { api } from '../client';
+import type { ApiResponse, AuthSessionData } from "@test/shared";
 
-type AuthMeData = {
-  user: {
-    id: string;
-    email: string | null;
-    name: string | null;
-  };
-};
+import { api, unwrapApiData } from "../client";
 
-
-export async function getAuthMe(): Promise<ApiResponse<AuthMeData>> {
-  const response = await api.get<ApiResponse<AuthMeData>>('/auth/me');
-  return response.data;
+export async function getAuthMe(): Promise<AuthSessionData> {
+  const response = await api.get<ApiResponse<AuthSessionData>>("/auth/me");
+  return unwrapApiData(response.data);
 }

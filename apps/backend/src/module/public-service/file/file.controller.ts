@@ -23,10 +23,18 @@ import {
 
 import { randomUUID } from 'node:crypto';
 
+import type {
+  CreateStoredFileMetaRequest,
+  UpdateStoredFileMetaRequest,
+} from '@test/shared';
+
 import { AuthenticatedGuard } from '../auth/permission/guards/authenticated.guard.js';
 
 import { StoredFileMetaService } from './store-file-meta/stored-file-meta.service.js';
-import { FILE_STORAGE, type FileStorage } from './intergration/file-storage.provider.js';
+import {
+  FILE_STORAGE,
+  type FileStorage,
+} from './intergration/file-storage.provider.js';
 
 @ApiTags('File')
 @Controller('file')
@@ -98,8 +106,7 @@ export class FileController {
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
 
-    const objectKey =
-      `uploads/${year}/${month}/${randomUUID()}${extension}`;
+    const objectKey = `uploads/${year}/${month}/${randomUUID()}${extension}`;
 
     const url = await this.fileStorage.getUploadUrl(
       objectKey,
@@ -110,9 +117,6 @@ export class FileController {
     return { url, objectKey };
   }
 
-
-
-  
   // @Post('upload')
   // @ApiOperation({
   //   summary: 'Direct upload to R2',
@@ -189,8 +193,7 @@ export class FileController {
   @Get('relation')
   @ApiOperation({
     summary: 'Get files by relation',
-    description:
-      '取得指定資源所關聯的 File Metadata。',
+    description: '取得指定資源所關聯的 File Metadata。',
   })
   @ApiQuery({
     name: 'relationType',
@@ -210,17 +213,13 @@ export class FileController {
     @Query('relationType') relationType: string,
     @Query('relationId') relationId: string,
   ) {
-    return this.storedFileMetaService.findByRelation(
-      relationType,
-      relationId,
-    );
+    return this.storedFileMetaService.findByRelation(relationType, relationId);
   }
 
- @Get('object/{*objectKey}')
+  @Get('object/{*objectKey}')
   @ApiOperation({
     summary: 'Get file metadata by object key',
-    description:
-      '依 R2 Object Key 取得 File Metadata。',
+    description: '依 R2 Object Key 取得 File Metadata。',
   })
   @ApiParam({
     name: 'objectKey',
@@ -235,12 +234,8 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
-  findByObjectKey(
-    @Param('objectKey') objectKey: string,
-  ) {
-    return this.storedFileMetaService.findByObjectKey(
-      objectKey,
-    );
+  findByObjectKey(@Param('objectKey') objectKey: string) {
+    return this.storedFileMetaService.findByObjectKey(objectKey);
   }
 
   @Get(':id')
@@ -261,17 +256,14 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
-  findById(
-    @Param('id') id: string,
-  ) {
+  findById(@Param('id') id: string) {
     return this.storedFileMetaService.findById(id);
   }
 
   @Get()
   @ApiOperation({
     summary: 'Get active files',
-    description:
-      '取得目前尚未軟刪除的 File Metadata。',
+    description: '取得目前尚未軟刪除的 File Metadata。',
   })
   @ApiResponse({
     status: 200,
@@ -363,20 +355,7 @@ export class FileController {
     status: 201,
     description: '成功建立 File Metadata。',
   })
-  create(
-    @Body()
-    body: {
-      objectKey: string;
-      bucketId?: string;
-      originalName?: string;
-      mimeType?: string;
-      bytes?: bigint;
-      etag?: string;
-      checksum?: string;
-      relationType?: string;
-      relationId?: string;
-    },
-  ) {
+  create(@Body() body: CreateStoredFileMetaRequest) {
     return this.storedFileMetaService.create(body);
   }
 
@@ -402,23 +381,8 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
-  update(
-    @Param('id') id: string,
-    @Body()
-    body: {
-      originalName?: string;
-      mimeType?: string;
-      bytes?: bigint;
-      etag?: string;
-      checksum?: string;
-      relationType?: string;
-      relationId?: string;
-    },
-  ) {
-    return this.storedFileMetaService.update(
-      id,
-      body,
-    );
+  update(@Param('id') id: string, @Body() body: UpdateStoredFileMetaRequest) {
+    return this.storedFileMetaService.update(id, body);
   }
 
   // ============================================================
@@ -444,9 +408,7 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
-  softDelete(
-    @Param('id') id: string,
-  ) {
+  softDelete(@Param('id') id: string) {
     return this.storedFileMetaService.softDelete(id);
   }
 }

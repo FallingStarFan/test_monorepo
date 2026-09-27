@@ -12,6 +12,8 @@ import { Button } from "@/components/base/button";
 import { Separator } from "@/components/base/separator";
 import { findNavItem } from "@/lib/navigation";
 import { resolveDisplayName } from "@/lib/session";
+import LoginToggle from "@/components/modules/auth/LoginToggle";
+import { useModalStore } from "@/lib";
 
 type HeaderProps = {
   hasSidebar?: boolean;
@@ -30,6 +32,14 @@ export function Header({
   const current = findNavItem(pathname);
   const { session, status, signOut } = useSession();
   const displayName = resolveDisplayName(session.user);
+
+  const openModal = useModalStore((s) => s.openModal);
+  const closeModal = useModalStore((s) => s.closeModal);
+
+  function handleOpenLogin() {
+    openModal(<LoginToggle onSuccess={() => closeModal("login")} />, "login");
+  }
+
 
   return (
     <header className="sticky top-0 z-30 flex h-header items-center gap-3 border-b bg-background/95 px-3 backdrop-blur sm:px-6">
@@ -64,9 +74,18 @@ export function Header({
       )}
 
   <div className="min-w-0">
-    <h1 className="truncate text-sm font-semibold sm:text-base">
-      {current?.label ?? '頁面不存在'}
-    </h1>
+    <div className="flex items-center gap-2">
+      <Link href="/" aria-label="星凡工作室首頁">
+        <img
+          src="/logo-pure.png"
+          alt="星凡工作室"
+          className="h-10 w-auto hover:opacity-80"
+        />
+      </Link>
+      <h1 className="truncate text-sm font-semibold sm:text-base">
+        {current?.label ?? '頁面不存在'}
+      </h1>
+    </div>
     <p className="hidden truncate text-xs text-muted-foreground sm:block">
       {current?.description ?? '此路徑沒有對應的頁面'}
     </p>
@@ -111,14 +130,15 @@ export function Header({
             </Button>
           </>
         ) : (
-          <Button size="sm" asChild>
-            <Link href={LOGIN_PAGE_PATH}>
+            <Button size="sm" onClick={handleOpenLogin}>
               <LogIn className="size-4" />
               登入
-            </Link>
           </Button>
         )}
+
       </div>
     </header>
   );
 }
+
+

@@ -1,14 +1,34 @@
 import { Injectable } from '@nestjs/common';
 
 import {
-  APP_ACCESS_SOURCE,
+  CANVAS_APP_NAME,
   CONSOLE_APP_NAME,
-  LAUNCHER_APP_ORDER,
   PUBLIC_SERVICE_APP_NAME,
   SYSTEM_ROLE_ADMIN,
-  type LauncherApp,
-  type MyAppsResponse,
 } from '@test/shared';
+
+const APP_ACCESS_SOURCE = {
+  ROLE: 'role',
+  PLATFORM_ADMIN: 'platform-admin',
+} as const;
+
+const LAUNCHER_APP_ORDER: readonly string[] = [
+  CONSOLE_APP_NAME,
+  CANVAS_APP_NAME,
+];
+
+type LauncherApp = {
+  id: string;
+  name: string;
+  description: string | null;
+  roleNames: string[];
+  accessSource: (typeof APP_ACCESS_SOURCE)[keyof typeof APP_ACCESS_SOURCE];
+};
+
+type MyAppsResponse = {
+  isAdmin: boolean;
+  apps: LauncherApp[];
+};
 
 import { PrismaService } from '@/module/public-service/prisma.js';
 
@@ -30,9 +50,7 @@ import { PrismaService } from '@/module/public-service/prisma.js';
  */
 @Injectable()
 export class MyAppsService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * 取得指定使用者可進入的 App 清單。
@@ -75,10 +93,7 @@ export class MyAppsService {
 
       // 「平台管理權」的判定與 PermissionGuard 一致：
       // 必須是 public-service 這個 App 的 ADMIN 角色，其他 App 的同名角色不算。
-      if (
-        app.name === PUBLIC_SERVICE_APP_NAME &&
-        name === SYSTEM_ROLE_ADMIN
-      ) {
+      if (app.name === PUBLIC_SERVICE_APP_NAME && name === SYSTEM_ROLE_ADMIN) {
         isPlatformAdmin = true;
       }
     }

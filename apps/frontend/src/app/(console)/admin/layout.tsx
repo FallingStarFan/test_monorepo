@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 
 import './globals.css';
 
-import { AppShell } from '@/components/layout/app-shell';
-import { SessionProvider } from '@/components/modules/auth/providers';
-import { ThemeProvider } from '@/components/base/providers/theme-provider';
-import { UiScaleProvider } from '@/components/base/providers/ui-scale-provider';
+import { SessionProvider } from '@/components';
+import { ThemeProvider } from '@/components';
+import { UiScaleProvider } from '@/components';
+import { AppShellBase } from '@/components';
 import { getServerSession } from '@/lib/server-session';
 
 export const metadata: Metadata = {
@@ -60,7 +60,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <UiScaleProvider>
             <SessionProvider initialSession={session}>
-              <AppShell>{children}</AppShell>
+              <AppShellBase>{children}</AppShellBase>
             </SessionProvider>
           </UiScaleProvider>
         </ThemeProvider>

@@ -13,6 +13,10 @@
     "packages/*"
   ],
   "scripts": {
+    "secrets:set:backend": "infisical secrets set --file=\"./apps/backend/.env\" --env=dev --path=/backend",
+    "secrets:set:frontend": "infisical secrets set --file=\"./apps/frontend/.env\" --env=dev --path=/frontend",
+    "dev:backend": "infisical run --env=dev --path=/backend -- pnpm --filter @test/backend start:dev",
+    "dev:frontend": "infisical run --env=dev --path=/frontend -- pnpm --filter @test/frontend dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",

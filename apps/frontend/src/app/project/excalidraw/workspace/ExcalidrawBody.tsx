@@ -14,13 +14,13 @@ import "@excalidraw/excalidraw/index.css";
 import "./excalidraw.css";
 
 import { PropertiesPanel } from "./components/Sidebar/PropertiesPannel/PropertiesPanel";
-import { excalidrawOptions } from "./excalidraw-options";
 import { Sidebar } from "./components/Sidebar/Sidebar";
+import { excalidrawOptions } from "./excalidraw-options";
 
+import { isDevMode } from "@/lib/config/environment";
+import { DevPanel } from "./components/Sidebar/PropertiesPannel/DevPannel/DevPanel";
 import type { CanvasController } from "./types/CanvasController";
 import type { CanvasState } from "./types/CanvasState";
-import { DevPanel } from "./components/Sidebar/PropertiesPannel/DevPannel/DevPanel";
-import { isDevMode } from "@/lib/environment";
 
 const Excalidraw = dynamic(
   () =>

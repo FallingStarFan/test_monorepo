@@ -1,6 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import env from './env.js';
+
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('My API')
@@ -14,7 +16,7 @@ export function setupSwagger(app: INestApplication) {
       },
       'access-token',
     )
-    .addCookieAuth('access_token')
+    .addCookieAuth(env.accessCookieName)
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

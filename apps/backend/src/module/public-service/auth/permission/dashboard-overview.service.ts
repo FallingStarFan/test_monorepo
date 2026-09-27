@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  API_PREFIX,
-  DASHBOARD_MODULE_STATUS,
-  DEFAULT_API_PORT,
-  DEFAULT_WEB_PORT,
-  PAGINATION,
-  type DashboardModuleCoverage,
-  type DashboardOverview,
-} from '@test/shared';
+import env from '@/config/env.js';
+
+import { API_PREFIX } from '@test/shared';
+
+const DASHBOARD_MODULE_STATUS = {
+  DONE: '骨架完成',
+  TODO: '待辦',
+} as const;
+
+type DashboardModuleCoverage = {
+  backend: string;
+  frontend: string;
+  status: (typeof DASHBOARD_MODULE_STATUS)[keyof typeof DASHBOARD_MODULE_STATUS];
+};
 
 /**
  * 模組覆蓋清單。
@@ -19,6 +24,12 @@ import {
  * 要記得去前端改一份寫死的清單」，久而久之兩邊就會不一致；
  * 由後端提供，前端只負責顯示，新增模組時就只需要改動一處。
  */
+const PAGINATION = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+} as const;
+
 const MODULE_COVERAGE: readonly DashboardModuleCoverage[] = [
   {
     backend: 'public-service / auth',
@@ -51,8 +62,8 @@ const MODULE_COVERAGE: readonly DashboardModuleCoverage[] = [
  * 總覽頁資料服務。
  *
  * 為什麼需要一個 Service 而不是在 Controller 裡直接組資料：
- * 這些數值全部來自 @test/shared 的常數（Port、前綴、分頁預設值），
- * 組裝邏輯集中在一處，才有單一來源可以對照與測試；
+ * API 前綴與回應契約來自 @test/shared，部署位址與連接埠則由集中式
+ * 環境設定提供；組裝邏輯集中在一處，才有單一來源可以對照與測試；
  * Controller 只負責授權宣告與回應，職責不混在一起。
  */
 @Injectable()
@@ -65,18 +76,20 @@ export class DashboardOverviewService {
    * 「ADMIN 角色 + app:read 權限碼」的檢查；把授權結果混進資料內容
    * 會讓「資料」與「授權」兩個概念糾纏，之後改權限規則時容易誤改資料形狀。
    */
-  getOverview(): DashboardOverview {
+  getOverview() {
     return {
       generatedAt: new Date().toISOString(),
       endpoints: {
-        // 位址一律由共用常數組出，不從 .env 的 WEB_ORIGIN 讀取：
-        // WEB_ORIGIN 是後端 CORS 的白名單設定，語意是「允許哪個來源呼叫我」，
-        // 與「前端實際網址是什麼」是兩件事，拿來當顯示資料會讓兩者互相牽制。
-        apiBaseUrl: `http://localhost:${DEFAULT_API_PORT}${API_PREFIX}`,
+        // 實際部署位址來自集中驗證過的 FRONTEND_URL / BACKEND_URL；
+        // CORS_ORIGINS 僅負責列出允許攜帶 Cookie 呼叫 API 的精確來源。
+        apiBaseUrl: `${env.backendUrl}${API_PREFIX}`,
         apiPrefix: API_PREFIX,
-        apiPort: DEFAULT_API_PORT,
-        webOrigin: `http://localhost:${DEFAULT_WEB_PORT}`,
-        webPort: DEFAULT_WEB_PORT,
+        apiPort: env.serverPort,
+        webOrigin: env.frontendUrl,
+        webPort: Number(
+          new URL(env.frontendUrl).port ||
+            (env.frontendUrl.startsWith('https:') ? 443 : 80),
+        ),
         sharedPackageName: '@test/shared',
         sharedPackagePurpose: '型別、常數',
         pagination: {
