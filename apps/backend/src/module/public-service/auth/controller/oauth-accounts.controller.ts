@@ -8,7 +8,7 @@ import {
 
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OauthAccountService } from './oauth-accounts.service.js';
+import { OauthAccountService } from '../services/oauth-accounts.service.js';
 
 import { successResponse } from '@/common/response/response.util.js';
 

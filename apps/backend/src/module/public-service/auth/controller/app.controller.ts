@@ -3,8 +3,9 @@ import {
   Get,
   Param,
 } from '@nestjs/common';
+import { AppService } from '../services/app.service.js';
 
-import { AppService } from './app.service.js';
+
 
 @Controller('apps')
 export class AppController {

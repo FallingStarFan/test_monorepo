@@ -4,14 +4,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomUUID } from 'node:crypto';
 
 import { UserStatus } from '../prisma.js';
-import { OauthAccountService } from './oauth/oauth-accounts.service.js';
-import { UserPasswordService } from './passwords/user-passwords.service.js';
 import { JwtAuthService } from './services/jwt/jwt.service.js';
-import { SessionService } from './sessions/sessions.service.js';
-import { UserService } from './users/users.service.js';
+import { OauthAccountService } from './services/oauth-accounts.service.js';
+import { UserPasswordService } from './services/user-passwords.service.js';
+import { UserService } from './services/users.service.js';
 
 export interface OAuthProfile {
   provider: 'google' | 'github';
@@ -29,13 +27,17 @@ export class AuthService {
     private readonly userPasswordService: UserPasswordService,
     private readonly oauthAccountService: OauthAccountService,
     private readonly jwtAuthService: JwtAuthService,
-    private readonly sessionService: SessionService,
   ) {}
 
+  /**
+   * 使用 Email 與密碼登入。
+   */
   async loginWithPassword(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
 
-    if (!user) throw this.invalidCredentials();
+    if (!user) {
+      throw this.invalidCredentials();
+    }
 
     this.assertActiveUser(user.status);
 
@@ -51,6 +53,9 @@ export class AuthService {
     return this.createLoginResult(user.id, user);
   }
 
+  /**
+   * 註冊使用者並直接登入。
+   */
   async register(email: string, password: string, name?: string) {
     const existingUser = await this.userService.findByEmail(email);
 
@@ -63,17 +68,21 @@ export class AuthService {
       });
     }
 
+    const passwordHash = await bcrypt.hash(password, 12);
+
     const user = await this.userService.create({
       email,
       name,
     });
-    const passwordHash = await bcrypt.hash(password, 12);
 
     await this.userPasswordService.create(user.id, passwordHash);
 
     return this.createLoginResult(user.id, user);
   }
 
+  /**
+   * 使用 Google 或 GitHub 帳號登入。
+   */
   async loginWithOAuth(profile: OAuthProfile) {
     const account = await this.oauthAccountService.findByProviderAccount(
       profile.provider,
@@ -82,7 +91,13 @@ export class AuthService {
 
     if (account) {
       const user = await this.userService.findById(account.userId);
+
+      if (!user) {
+        throw new UnauthorizedException('使用者不存在');
+      }
+
       this.assertActiveUser(user.status);
+
       return this.createLoginResult(user.id, user);
     }
 
@@ -90,8 +105,7 @@ export class AuthService {
       ? await this.userService.findByEmail(profile.email)
       : null;
 
-    // Linking by an unverified provider email would let an attacker claim an
-    // existing password account. Such accounts must be linked explicitly later.
+    // 未驗證的 OAuth Email 不可自動連結既有帳號。
     if (user && !profile.emailVerified) {
       throw new UnauthorizedException({
         message: {
@@ -122,34 +136,25 @@ export class AuthService {
     return this.createLoginResult(user.id, user);
   }
 
+  /**
+   * 驗證 refresh JWT，簽發新的 access JWT 與 refresh JWT。
+   */
   async refresh(refreshToken: string) {
-    const verified = await this.jwtAuthService.verifyRefreshToken(refreshToken);
+    const verified =
+      await this.jwtAuthService.verifyRefreshToken(refreshToken);
+
     const user = await this.userService.findById(verified.userId);
 
-    try {
-      this.assertActiveUser(user.status);
-    } catch (error) {
-      await this.sessionService.revoke(verified.sessionId, verified.userId);
-      throw error;
+    if (!user) {
+      throw new UnauthorizedException('使用者不存在');
     }
 
-    const nextRefreshToken = await this.jwtAuthService.issueRefreshToken(
-      verified.userId,
-      verified.sessionId,
-    );
+    this.assertActiveUser(user.status);
 
-    await this.sessionService.rotateRefreshToken({
-      id: verified.sessionId,
-      userId: verified.userId,
-      currentTokenHash: this.hashToken(refreshToken),
-      nextTokenHash: this.hashToken(nextRefreshToken.token),
-      nextExpiresAt: nextRefreshToken.expiresAt,
-    });
-
-    const accessToken = await this.jwtAuthService.issueAccessToken(
-      verified.userId,
-      verified.sessionId,
-    );
+    const [accessToken, nextRefreshToken] = await Promise.all([
+      this.jwtAuthService.issueAccessToken(user.id),
+      this.jwtAuthService.issueRefreshToken(user.id),
+    ]);
 
     return {
       accessToken,
@@ -157,93 +162,69 @@ export class AuthService {
     };
   }
 
-  async logout(tokens: {
-    accessToken?: string;
-    refreshToken?: string;
-  }): Promise<void> {
-    let session:
-      | {
-          sessionId: string;
-          userId: string;
-        }
-      | undefined;
-
-    if (tokens.refreshToken) {
-      try {
-        session = await this.jwtAuthService.verifyRefreshToken(
-          tokens.refreshToken,
-        );
-      } catch {
-        // A missing/expired refresh cookie must not prevent clearing cookies.
-      }
-    }
-
-    if (!session && tokens.accessToken) {
-      try {
-        session = await this.jwtAuthService.verifyAccessToken(
-          tokens.accessToken,
-        );
-      } catch {
-        // Logout is idempotent even when credentials are already invalid.
-      }
-    }
-
-    if (session) {
-      await this.sessionService.revoke(session.sessionId, session.userId);
-    }
+  /**
+   * 純 JWT 沒有伺服器端 Session 可以撤銷。
+   * 登出時由 Controller 清除 access 與 refresh Cookie。
+   */
+  async logout(): Promise<void> {
+    return;
   }
 
+  /**
+   * 驗證 access JWT，並取得目前仍有效的使用者資料。
+   */
   async validateAccessToken(token: string) {
-    const accessToken = await this.jwtAuthService.verifyAccessToken(token);
-    const user = await this.userService.findById(accessToken.userId);
+    const verified =
+      await this.jwtAuthService.verifyAccessToken(token);
+
+    const user = await this.userService.findById(verified.userId);
+
+    if (!user) {
+      throw new UnauthorizedException('使用者不存在');
+    }
 
     this.assertActiveUser(user.status);
 
     return {
       user,
       accessToken: {
-        expiresAt: accessToken.expiresAt,
+        expiresAt: verified.expiresAt,
       },
     };
   }
 
+  /**
+   * 依已驗證的 userId 取得目前使用者。
+   */
   async getCurrentUser(userId: string) {
     const user = await this.userService.findById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('使用者不存在');
+    }
+
     this.assertActiveUser(user.status);
+
     return user;
   }
 
+  /**
+   * 登入成功後簽發兩種 JWT。
+   */
   private async createLoginResult(
     userId: string,
-    user: Awaited<ReturnType<UserService['findById']>>,
+    user: NonNullable<Awaited<ReturnType<UserService['findById']>>>,
   ) {
-    const sessionId = randomUUID();
-    const refreshToken = await this.jwtAuthService.issueRefreshToken(
-      userId,
-      sessionId,
-    );
-
-    await this.sessionService.create(
-      sessionId,
-      userId,
-      this.hashToken(refreshToken.token),
-      refreshToken.expiresAt,
-    );
-
-    const accessToken = await this.jwtAuthService.issueAccessToken(
-      userId,
-      sessionId,
-    );
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtAuthService.issueAccessToken(userId),
+      this.jwtAuthService.issueRefreshToken(userId),
+    ]);
 
     return {
       user,
       accessToken,
       refreshToken,
     };
-  }
-
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
   }
 
   private assertActiveUser(status: UserStatus): void {

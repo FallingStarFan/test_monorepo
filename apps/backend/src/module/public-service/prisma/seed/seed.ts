@@ -4,7 +4,7 @@ import { seedAuth } from './auth.seed.js';
 import { seedFile } from './file.seed.js';
 import { seedLauncherApps } from './launcher.seed.js';
 import { seedNotification } from './notification.seed.js';
-import { seedPermission } from './permission.seed.js';
+
 
 const prisma = new PrismaService();
 
@@ -15,7 +15,6 @@ async function main() {
   await seedFile(prisma);
   await seedNotification(prisma);
   // 權限 seed 放在最後：它會用到 auth seed 建立的管理員帳號
-  await seedPermission(prisma);
   // App 入口所需的 App 資料列（控制台、Canvas）
   await seedLauncherApps(prisma);
 

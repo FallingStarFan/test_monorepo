@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { PermissionModule } from '../auth/permission/permission.module.js';
+// import { PermissionModule } from '../auth/permission/permission.module.js';
 
 import { FileController } from './file.controller.js';
 import { R2Service } from './intergration/r2.service.js';
@@ -11,7 +11,9 @@ import { FILE_STORAGE } from './intergration/file-storage.provider.js';
   // 上傳相關端點已加上 AuthenticatedGuard（未登入回 401）。
   // Guard 由 PermissionModule 統一提供並 export，這裡只取用、不重新實作一份，
   // 避免同一套登入驗證邏輯出現第二個版本。
-  imports: [PermissionModule],
+  imports: [
+    // PermissionModule,
+  ],
 
   controllers: [FileController],
   providers: [

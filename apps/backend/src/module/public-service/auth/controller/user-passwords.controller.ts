@@ -13,7 +13,7 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 
-import { UserPasswordService } from './user-passwords.service.js';
+import { UserPasswordService } from '../services/user-passwords.service.js';
 
 import { successResponse } from '@/common/response/response.util.js';
 

@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+
 import {
   ApiBody,
   ApiOperation,
@@ -28,13 +29,13 @@ import type {
   UpdateStoredFileMetaRequest,
 } from '@test/shared';
 
-import { AuthenticatedGuard } from '../auth/permission/guards/authenticated.guard.js';
 
 import { StoredFileMetaService } from './store-file-meta/stored-file-meta.service.js';
 import {
   FILE_STORAGE,
   type FileStorage,
 } from './intergration/file-storage.provider.js';
+import { JwtAuthGuard } from '../auth/services/jwt/jwt-auth.guard.js';
 
 @ApiTags('File')
 @Controller('file')
@@ -50,7 +51,7 @@ export class FileController {
   // ============================================================
 
   @Post('upload-url')
-  @UseGuards(AuthenticatedGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Create R2 upload URL',
     description:
@@ -278,7 +279,7 @@ export class FileController {
   // ============================================================
 
   @Post()
-  @UseGuards(AuthenticatedGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Create file metadata',
     description:

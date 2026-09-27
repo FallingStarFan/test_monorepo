@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 
 
 import { AuthModule } from './module/public-service/auth/auth.module.js';
-import { PermissionModule } from './module/public-service/auth/permission/permission.module.js';
 import { FileModule } from './module/public-service/file/file.module.js';
 import { NotificationModule } from './module/public-service/notification/notification.module.js';
 import { PrismaModule } from './module/public-service/prisma/prisma.module.js';
+import { JwtAuthModule } from './module/public-service/auth/services/jwt/jwt.module.js';
 
 @Module({
   imports: [
@@ -18,11 +18,11 @@ import { PrismaModule } from './module/public-service/prisma/prisma.module.js';
 
     // Prisma database client
     PrismaModule,
-
+    JwtAuthModule,
     // Authentication
     AuthModule,
     // Permission：細粒度權限（Permission / RolePermission + Guard 與管理 API）
-    PermissionModule,
+    // PermissionModule,
     // File
     FileModule,
     // Notification

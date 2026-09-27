@@ -34,12 +34,12 @@ import {
   PasswordLoginDto,
   PasswordRegisterDto,
 } from './dto/password-auth.dto.js';
-import type { AuthenticatedRequest } from './permission/guards/authenticated.guard.js';
-import { AuthenticatedGuard } from './permission/guards/authenticated.guard.js';
+
 import {
   GithubOAuthGuard,
   GoogleOAuthGuard,
 } from './strategies/oauth-state.guard.js';
+import { JwtAuthGuard, type AuthenticatedRequest } from './services/jwt/jwt-auth.guard.js';
 
 type PublicUserSource = {
   id: string;
@@ -201,7 +201,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(AuthenticatedGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
   @ApiOperation({
     summary: 'Get current user / 取得目前使用者',
@@ -214,38 +214,30 @@ export class AuthController {
   })
   async me(@Req() request: AuthenticatedRequest) {
     const user = await this.authService.getCurrentUser(
-      request.currentUserId as string,
+      request.user.id,
     );
 
     return this.toAuthSessionData(
       user,
-      request.currentAccessTokenExpiresAt as Date,
+      request.user.accessTokenExpiresAt,
     );
   }
+@Post('logout')
+@HttpCode(HttpStatus.OK)
+@ApiCookieAuth()
+@ApiOperation({
+  summary: 'Logout / 登出',
+  description:
+    '清除目前瀏覽器的 access 與 refresh Cookie。已簽發的 JWT 會在各自到期時失效。',
+})
+@ApiResponse({ status: 200, description: '登入 Cookie 已清除。' })
+logout(
+  @Res({ passthrough: true }) response: Response,
+) {
+  this.authCookies.clearLoginCookies(response);
 
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  @ApiCookieAuth()
-  @ApiOperation({
-    summary: 'Logout / 登出',
-    description:
-      '撤銷目前裝置的 JWT Session，並以相同選項清除 access/refresh Cookie。',
-  })
-  @ApiResponse({ status: 200, description: '目前裝置已登出。' })
-  async logout(
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    await this.authService.logout({
-      accessToken:
-        this.readCookie(request, env.accessCookieName) ??
-        this.readBearerToken(request),
-      refreshToken: this.readCookie(request, env.refreshCookieName),
-    });
-    this.authCookies.clearLoginCookies(response);
-
-    return { success: true };
-  }
+  return { success: true };
+}
 
   private beginOAuth(
     provider: 'google' | 'github',

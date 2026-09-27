@@ -2,24 +2,24 @@
 // src/user/user.controller.ts
 
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
 } from '@nestjs/common';
 
 import {
-  ApiBody,
-  ApiOperation,
-  ApiTags,
+    ApiBody,
+    ApiOperation,
+    ApiTags,
 } from '@nestjs/swagger';
 
-import { CreateUserDto } from './dto/create-user.dto.js';
-import type { UpdateUserDto } from './dto/update-user.dto.js';
-import { UserService } from './users.service.js';
+import { UserService } from '../services/users.service.js';
+import { CreateUserDto } from '../users/dto/create-user.dto.js';
+import type { UpdateUserDto } from '../users/dto/update-user.dto.js';
 
 import { successResponse } from '@/common/response/response.util.js';
 

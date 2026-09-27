@@ -1,17 +1,17 @@
 // src/user/user.service.ts
 
 import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
+    ConflictException,
+    Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 
 
 
 
-import type { CreateUserDto } from './dto/create-user.dto.js';
-import type { UpdateUserDto } from './dto/update-user.dto.js';
-import  { Prisma, PrismaService } from '../../prisma.js';
+import { Prisma, PrismaService } from '../../prisma.js';
+import type { CreateUserDto } from '../users/dto/create-user.dto.js';
+import type { UpdateUserDto } from '../users/dto/update-user.dto.js';
 
 
 

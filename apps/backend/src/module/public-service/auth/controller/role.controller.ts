@@ -8,7 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 
-import { RoleService } from './role.service.js';
+import { RoleService } from '../services/role.service.js';
 
 @Controller('apps/:appId/roles')
 export class RoleController {
