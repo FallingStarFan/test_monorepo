@@ -1,13 +1,13 @@
+import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
 import {
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {  PrismaService, Prisma } from '../../prisma.js';
 
 
 @Injectable()
-export class UserPasswordService {
+export class UserPasswordsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**

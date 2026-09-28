@@ -20,8 +20,8 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
+import { randomBytes } from 'node:crypto';
 
 import type { AuthSessionData, AuthUser } from '@test/shared';
 
@@ -35,11 +35,11 @@ import {
   PasswordRegisterDto,
 } from './dto/password-auth.dto.js';
 
+import { JwtAuthGuard, type AuthenticatedRequest } from './jwt/jwt-auth.guard.js';
 import {
   GithubOAuthGuard,
   GoogleOAuthGuard,
 } from './strategies/oauth-state.guard.js';
-import { JwtAuthGuard, type AuthenticatedRequest } from './services/jwt/jwt-auth.guard.js';
 
 type PublicUserSource = {
   id: string;

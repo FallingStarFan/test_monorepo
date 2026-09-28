@@ -3,14 +3,14 @@ import {
   Get,
   Param,
 } from '@nestjs/common';
-import { AppService } from '../services/app.service.js';
+import { AppsService } from './apps.service.js';
 
 
 
 @Controller('apps')
-export class AppController {
+export class AppsController {
   constructor(
-    private readonly appService: AppService,
+    private readonly appService: AppsService,
   ) {}
 
   // 取得所有 App

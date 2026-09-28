@@ -4,10 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { PrismaService } from '../../prisma.js';
+import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
+
 
 @Injectable()
-export class AppService {
+export class AppsService {
   constructor(
     private readonly prisma: PrismaService,
   ) {}

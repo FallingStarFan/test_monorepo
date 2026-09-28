@@ -8,8 +8,9 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../services/jwt/jwt-auth.guard.js';
-import { UserRoleService } from '../services/user-role.service.js';
+
+import {UserRolesService } from './user-roles.service.js';
+import { JwtAuthGuard } from '../../jwt/jwt-auth.guard.js';
 
 
 type AuthenticatedRequest = Request & {
@@ -21,7 +22,7 @@ type AuthenticatedRequest = Request & {
 @UseGuards(JwtAuthGuard)
 @Controller('auth/me/role')
 export class UserRoleController {
-  constructor(private readonly userRoleService: UserRoleService) {}
+  constructor(private readonly userRoleService: UserRolesService) {}
 
   @Get()
   @ApiOperation({ summary: '取得目前登入者的角色' })

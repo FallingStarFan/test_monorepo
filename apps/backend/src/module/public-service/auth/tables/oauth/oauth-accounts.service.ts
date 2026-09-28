@@ -4,11 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, PrismaService } from '../../prisma.js';
+import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
 
 
 @Injectable()
-export class OauthAccountService {
+export class OauthAccountsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**

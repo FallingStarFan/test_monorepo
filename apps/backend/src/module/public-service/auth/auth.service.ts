@@ -1,15 +1,15 @@
 import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
+    ConflictException,
+    Injectable,
+    UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 import { UserStatus } from '../prisma.js';
-import { JwtAuthService } from './services/jwt/jwt.service.js';
-import { OauthAccountService } from './services/oauth-accounts.service.js';
-import { UserPasswordService } from './services/user-passwords.service.js';
-import { UserService } from './services/users.service.js';
+import { JwtAuthService } from './jwt/jwt.service.js';
+import { UsersService } from './tables/users/users.service.js';
+import { UserPasswordsService } from './tables/user-passwords/user-passwords.service.js';
+import { OauthAccountsService } from './tables/oauth/oauth-accounts.service.js';
 
 export interface OAuthProfile {
   provider: 'google' | 'github';
@@ -23,9 +23,9 @@ export interface OAuthProfile {
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
-    private readonly userPasswordService: UserPasswordService,
-    private readonly oauthAccountService: OauthAccountService,
+    private readonly userService: UsersService,
+    private readonly userPasswordService: UserPasswordsService,
+    private readonly oauthAccountService: OauthAccountsService,
     private readonly jwtAuthService: JwtAuthService,
   ) {}
 
@@ -213,7 +213,7 @@ export class AuthService {
    */
   private async createLoginResult(
     userId: string,
-    user: NonNullable<Awaited<ReturnType<UserService['findById']>>>,
+    user: NonNullable<Awaited<ReturnType<UsersService['findById']>>>,
   ) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtAuthService.issueAccessToken(userId),

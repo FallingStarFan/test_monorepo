@@ -1,4 +1,6 @@
-import { Module } from '@nestjs/common';  
+import { Module } from '@nestjs/common';
+import { OauthAccountsModule } from './tables/oauth/oauth-accounts.module.js';
+import { UsersModule } from './tables/users/users.module.js';
 
 import { AuthCookieService } from '@/config/auth-cookie.service.js';
 
@@ -6,14 +8,23 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { GithubStrategy } from './strategies/github.strategy.js';
 import { GoogleStrategy } from './strategies/google.strategy.js';
-import { ControllerModule } from './controller/module.js';
-import { JwtAuthModule } from './services/jwt/jwt.module.js';
+import { AppModule } from '@/app.module.js';
+import { RolesModule } from './tables/role/roles.module.js';
+import { UserRolesModule } from './tables/user-role/user-roles.module.js';
+import { UserPasswordsModule } from './tables/user-passwords/user-passwords.module.js';
+import { AppsModule } from './tables/app/apps.module.js';
 
 
 @Module({
   imports: [
-    ControllerModule,
-
+    AppsModule,
+    UsersModule,
+    UserPasswordsModule,
+    RolesModule,
+    
+    UserRolesModule,
+    
+    OauthAccountsModule,
   ],
   controllers: [AuthController],
   providers: [

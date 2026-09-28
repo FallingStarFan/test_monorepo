@@ -17,17 +17,17 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 
-import { UserService } from '../services/users.service.js';
-import { CreateUserDto } from '../users/dto/create-user.dto.js';
-import type { UpdateUserDto } from '../users/dto/update-user.dto.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import type { UpdateUserDto } from './dto/update-user.dto.js';
+import { UsersService } from './users.service.js';
 
 import { successResponse } from '@/common/response/response.util.js';
 
 @ApiTags('Users')
 @Controller('users')
-export class UserController {
+export class UsersController {
   constructor(
-    private readonly userService: UserService,
+    private readonly userService: UsersService,
   ) {}
 
   /**

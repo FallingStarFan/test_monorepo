@@ -1,19 +1,19 @@
 import {
-    Body,
-    Controller,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
+  Body,
+  Controller,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
 
 import {
-    ApiBody,
-    ApiOperation,
-    ApiTags,
+  ApiBody,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
 
-import { UserPasswordService } from '../services/user-passwords.service.js';
+import { UserPasswordsService } from './user-passwords.service.js';
 
 import { successResponse } from '@/common/response/response.util.js';
 
@@ -27,9 +27,9 @@ class UpdatePasswordDto {
 
 @ApiTags('User Password')
 @Controller('users/:userId/password')
-export class UserPasswordController {
+export class UserPasswordsController {
   constructor(
-    private readonly userPasswordService: UserPasswordService,
+    private readonly userPasswordService: UserPasswordsService,
   ) {}
 
   /**

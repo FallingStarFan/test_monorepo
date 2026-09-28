@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 
 
 import { AuthModule } from './module/public-service/auth/auth.module.js';
+import { JwtAuthModule } from './module/public-service/auth/jwt/jwt.module.js';
 import { FileModule } from './module/public-service/file/file.module.js';
 import { NotificationModule } from './module/public-service/notification/notification.module.js';
 import { PrismaModule } from './module/public-service/prisma/prisma.module.js';
-import { JwtAuthModule } from './module/public-service/auth/services/jwt/jwt.module.js';
 
 @Module({
   imports: [

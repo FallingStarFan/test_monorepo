@@ -4,10 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import {  PrismaService, Prisma } from '../../prisma.js';
+import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
 
 @Injectable()
-export class RoleService {
+export class RolesService {
   constructor(
     private readonly prisma: PrismaService,
   ) {}

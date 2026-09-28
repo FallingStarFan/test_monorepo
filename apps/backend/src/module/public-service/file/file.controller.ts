@@ -30,12 +30,12 @@ import type {
 } from '@test/shared';
 
 
-import { StoredFileMetaService } from './store-file-meta/stored-file-meta.service.js';
+import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
 import {
   FILE_STORAGE,
   type FileStorage,
 } from './intergration/file-storage.provider.js';
-import { JwtAuthGuard } from '../auth/services/jwt/jwt-auth.guard.js';
+import { StoredFileMetaService } from './store-file-meta/stored-file-meta.service.js';
 
 @ApiTags('File')
 @Controller('file')

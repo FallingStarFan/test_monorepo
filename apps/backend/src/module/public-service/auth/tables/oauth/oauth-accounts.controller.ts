@@ -8,15 +8,15 @@ import {
 
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OauthAccountService } from '../services/oauth-accounts.service.js';
+import { OauthAccountsService } from './oauth-accounts.service.js';
 
 import { successResponse } from '@/common/response/response.util.js';
 
 @ApiTags('OAuth Accounts')
 @Controller('oauth-accounts')
-export class OauthAccountController {
+export class OauthAccountsController {
   constructor(
-    private readonly oauthAccountService: OauthAccountService,
+    private readonly oauthAccountService: OauthAccountsService,
   ) {}
 
   /**

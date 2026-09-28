@@ -1,19 +1,19 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
 } from '@nestjs/common';
 
-import { RoleService } from '../services/role.service.js';
+import { RolesService } from './roles.service.js';
 
 @Controller('apps/:appId/roles')
-export class RoleController {
+export class RolesController {
   constructor(
-    private readonly roleService: RoleService,
+    private readonly roleService: RolesService,
   ) {}
 
   // 取得 App 的所有 Role

@@ -9,16 +9,16 @@ import {
 
 
 
-import { Prisma, PrismaService } from '../../prisma.js';
-import type { CreateUserDto } from '../users/dto/create-user.dto.js';
-import type { UpdateUserDto } from '../users/dto/update-user.dto.js';
+import { Prisma, PrismaService } from '../../../prisma.js';
+import type { CreateUserDto } from './dto/create-user.dto.js';
+import type { UpdateUserDto } from './dto/update-user.dto.js';
 
 
 
 
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**

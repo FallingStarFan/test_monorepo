@@ -1,8 +1,9 @@
+import { PrismaService } from '@/module/public-service/prisma.js';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma.js';
+
 
 @Injectable()
-export class UserRoleService {
+export class UserRolesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getRolesForApp(userId: string, appId?: string) {
