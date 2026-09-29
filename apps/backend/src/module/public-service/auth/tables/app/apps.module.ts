@@ -1,6 +1,7 @@
 // controller/module.ts
 import { Module } from '@nestjs/common';
 import { AppsService } from './apps.service.js';
+import { AppsController } from './apps.controller.js';
 
 
 
@@ -10,7 +11,7 @@ import { AppsService } from './apps.service.js';
 @Module({
  
   controllers: [
-    // RolesController,
+    // AppsController,
   ],
   providers: [
     AppsService,

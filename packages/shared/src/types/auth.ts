@@ -15,12 +15,18 @@ export interface AuthUser {
   updatedAt: string;
 }
 
+export interface AuthRoleData {
+  appName: string;
+  roleName: string[];
+};
+
 export interface AccessTokenMetadata {
   expiresAt: string;
 }
 
 export interface AuthSessionData {
   user: AuthUser;
+  roles: AuthRoleData[]; 
   accessToken: AccessTokenMetadata;
 }
 

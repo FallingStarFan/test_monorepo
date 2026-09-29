@@ -1,15 +1,18 @@
+// auth.service.ts
 import {
-    ConflictException,
-    Injectable,
-    UnauthorizedException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 import { UserStatus } from '../prisma.js';
 import { JwtAuthService } from './jwt/jwt.service.js';
-import { UsersService } from './tables/users/users.service.js';
-import { UserPasswordsService } from './tables/user-passwords/user-passwords.service.js';
 import { OauthAccountsService } from './tables/oauth/oauth-accounts.service.js';
+import { UserPasswordsService } from './tables/user-passwords/user-passwords.service.js';
+
+import { UsersService } from './tables/users/users.service.js';
+import { AuthRolesService } from './tables/user-role/auth-role.service.js';
 
 export interface OAuthProfile {
   provider: 'google' | 'github';
@@ -20,10 +23,17 @@ export interface OAuthProfile {
   image?: string;
 }
 
+/**
+ * 處理帳密與 OAuth 登入、JWT 更新，以及目前使用者查詢。
+ *
+ * 登入成功時回傳的 roles 已整理成 AuthRoleData[]：
+ * [{ appName: 'xingfan-studio', roleName: ['ADMIN', 'USER'] }]
+ */
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
+    private readonly authRolesService: AuthRolesService,
     private readonly userPasswordService: UserPasswordsService,
     private readonly oauthAccountService: OauthAccountsService,
     private readonly jwtAuthService: JwtAuthService,
@@ -31,6 +41,8 @@ export class AuthService {
 
   /**
    * 使用 Email 與密碼登入。
+   *
+   * 帳密驗證成功後，取得角色並簽發 access、refresh JWT。
    */
   async loginWithPassword(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
@@ -41,7 +53,9 @@ export class AuthService {
 
     this.assertActiveUser(user.status);
 
-    const userPassword = await this.userPasswordService.findByUserId(user.id);
+    const userPassword = await this.userPasswordService.findByUserId(
+      user.id,
+    );
 
     if (
       !userPassword ||
@@ -54,7 +68,9 @@ export class AuthService {
   }
 
   /**
-   * 註冊使用者並直接登入。
+   * 建立帳密帳號並直接登入。
+   *
+   * 新帳號尚未指派角色時，登入回應的 roles 會是 []。
    */
   async register(email: string, password: string, name?: string) {
     const existingUser = await this.userService.findByEmail(email);
@@ -82,12 +98,16 @@ export class AuthService {
 
   /**
    * 使用 Google 或 GitHub 帳號登入。
+   *
+   * 已綁定 OAuth 帳號時使用對應使用者；
+   * 未綁定時，依已驗證的 Email 連結既有帳號，或建立新使用者。
    */
   async loginWithOAuth(profile: OAuthProfile) {
-    const account = await this.oauthAccountService.findByProviderAccount(
-      profile.provider,
-      profile.providerAccountId,
-    );
+    const account =
+      await this.oauthAccountService.findByProviderAccount(
+        profile.provider,
+        profile.providerAccountId,
+      );
 
     if (account) {
       const user = await this.userService.findById(account.userId);
@@ -105,7 +125,7 @@ export class AuthService {
       ? await this.userService.findByEmail(profile.email)
       : null;
 
-    // 未驗證的 OAuth Email 不可自動連結既有帳號。
+    // OAuth 提供者未確認 Email 時，不自動連結同 Email 的既有帳號。
     if (user && !profile.emailVerified) {
       throw new UnauthorizedException({
         message: {
@@ -137,7 +157,9 @@ export class AuthService {
   }
 
   /**
-   * 驗證 refresh JWT，簽發新的 access JWT 與 refresh JWT。
+   * 驗證 refresh JWT，並簽發新的 access 與 refresh JWT。
+   *
+   * 此端點只回傳 token 資訊，不需要查詢角色。
    */
   async refresh(refreshToken: string) {
     const verified =
@@ -163,15 +185,10 @@ export class AuthService {
   }
 
   /**
-   * 純 JWT 沒有伺服器端 Session 可以撤銷。
-   * 登出時由 Controller 清除 access 與 refresh Cookie。
-   */
-  async logout(): Promise<void> {
-    return;
-  }
-
-  /**
-   * 驗證 access JWT，並取得目前仍有效的使用者資料。
+   * 驗證 access JWT，並確認使用者目前仍可登入。
+   *
+   * 若 JwtAuthGuard 正在呼叫此方法，維持此回傳格式，
+   * 讓 guard 取得 user 與 access token 到期時間。
    */
   async validateAccessToken(token: string) {
     const verified =
@@ -194,8 +211,25 @@ export class AuthService {
   }
 
   /**
-   * 依已驗證的 userId 取得目前使用者。
+   * 依 guard 已驗證的 userId，取得 /auth/me 所需資料。
+   *
+   * 沒有指派角色時回傳 roles: []，不視為登入失敗。
    */
+  async getCurrentUserWithRoles(userId: string) {
+    const user = await this.userService.findById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('使用者不存在');
+    }
+
+    this.assertActiveUser(user.status);
+
+    const roles = await this.authRolesService.getAuthRoles(userId);
+
+    return { user, roles };
+  }
+  
+  /** 取得目前仍可登入的使用者。 */
   async getCurrentUser(userId: string) {
     const user = await this.userService.findById(userId);
 
@@ -208,25 +242,39 @@ export class AuthService {
     return user;
   }
 
+  /** 取得使用者在各 App 的角色；沒有角色時回傳 []。 */
+  async getCurrentUserRoles(userId: string) {
+    return this.authRolesService.getAuthRoles(userId);
+  }
+
+
+
   /**
-   * 登入成功後簽發兩種 JWT。
+   * 登入成功後，查詢各 App 的角色並簽發兩種 JWT。
+   *
+   * roles 是 API 回應資料；目前不會寫入 JWT payload。
    */
   private async createLoginResult(
     userId: string,
-    user: NonNullable<Awaited<ReturnType<UsersService['findById']>>>,
+    user: NonNullable<
+      Awaited<ReturnType<UsersService['findById']>>
+    >,
   ) {
-    const [accessToken, refreshToken] = await Promise.all([
+    const [roles, accessToken, refreshToken] = await Promise.all([
+      this.authRolesService.getAuthRoles(userId),
       this.jwtAuthService.issueAccessToken(userId),
       this.jwtAuthService.issueRefreshToken(userId),
     ]);
 
     return {
       user,
+      roles,
       accessToken,
       refreshToken,
     };
   }
 
+  /** 拒絕停用或封鎖的使用者登入。 */
   private assertActiveUser(status: UserStatus): void {
     if (status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException({
@@ -238,6 +286,7 @@ export class AuthService {
     }
   }
 
+  /** 統一帳密錯誤訊息，避免透露 Email 是否存在。 */
   private invalidCredentials(): UnauthorizedException {
     return new UnauthorizedException({
       message: {
