@@ -9,7 +9,9 @@ import {
     Param,
     Patch,
     Post,
+    Query,
 } from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
 
 import {
     ApiBody,
@@ -18,12 +20,13 @@ import {
 } from '@nestjs/swagger';
 
 import { CreateUserDto } from './dto/create-user.dto.js';
-import type { UpdateUserDto } from './dto/update-user.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UsersService } from './users.service.js';
 
 import { successResponse } from '@/common/response/response.util.js';
+import  { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 
-@ApiTags('Users')
+@ApiTags('Auth/Users')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -76,13 +79,17 @@ Create a new user.
   @ApiOperation({
     summary: 'Get users / 取得使用者列表',
     description: `
-Get all users.
+  Get a paginated list of users.
 
-取得所有使用者列表。
-`,
+  分頁取得使用者列表。
+  `,
   })
-  async findAll() {
-    const users = await this.userService.findAll();
+  async findAll(@Query() query: PageQueryDto) {
+    const users = await this.userService.findAllPageable(
+      query.page,
+      query.pageSize,
+      query.order,
+    );
 
     return successResponse(
       200,
@@ -93,7 +100,6 @@ Get all users.
       users,
     );
   }
-
   /**
    * GET /users/:id
    * 取得單一使用者

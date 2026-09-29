@@ -4,41 +4,48 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 
 import type { Request, Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
+  const ctx = host.switchToHttp();
+  const response = ctx.getResponse<Response>();
+  const request = ctx.getRequest<Request>();
 
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+  const statusCode =
+    exception instanceof HttpException
+      ? exception.getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const statusCode =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-
-    const message = this.getMessage(exception, statusCode);
-
-    // 為什麼要另外取 code：權限錯誤必須讓前端分辨 NO_APP_ROLE 與
-    // PERMISSION_DENIED，而原本的 filter 只輸出 message，會把例外攜帶的 code 吃掉。
-    const code = this.getErrorCode(exception);
-
-    response.status(statusCode).json({
-      statusCode,
-      message,
-      // 只有例外真的帶了 code 才附加欄位；既有 API 的錯誤回應形狀
-      // 維持 { statusCode, message, data }，不會多出 null 欄位而改變契約。
-      ...(code !== undefined && {
-        code,
-      }),
-      data: null,
-    });
+  if (exception instanceof HttpException) {
+    this.logger.error(
+      `${request.method} ${request.url} → ${statusCode}`,
+      JSON.stringify(exception.getResponse()),
+    );
+  } else {
+    // 非 HttpException：一定要印出完整 stack，否則永遠查不到原因
+    this.logger.error(
+      `Unhandled exception: ${request.method} ${request.url}`,
+      exception instanceof Error ? exception.stack : String(exception),
+    );
   }
 
+  const message = this.getMessage(exception, statusCode);
+  const code = this.getErrorCode(exception);
+
+  response.status(statusCode).json({
+    statusCode,
+    message,
+    ...(code !== undefined && { code }),
+    data: null,
+  });
+}
   /**
    * 取出例外攜帶的錯誤碼。
    *

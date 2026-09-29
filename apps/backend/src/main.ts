@@ -7,11 +7,24 @@ import { HttpExceptionFilter } from './common/response/filters/http-exception.fi
 import { ResponseInterceptor } from './common/response/response.interceptor.js';
 import env from './config/env.js';
 import { setupSwagger } from './config/swagger.config.js';
+import { ValidationPipe } from '@nestjs/common/pipes/index.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  
   app.setGlobalPrefix('api');
   app.use(cookieParser());
+
+
+  
+  app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+    forbidNonWhitelisted: true,
+  }),
+);
 
   app.enableCors({
     origin: env.corsOrigins,

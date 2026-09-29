@@ -166,14 +166,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth()
   @ApiOperation({
-    summary: 'Rotate refresh JWT / 輪替 Refresh Token',
+    summary: 'Refresh JWT / 更新 Token',
     description:
-      '驗證 refresh HttpOnly Cookie 與 Session 雜湊，輪替 refresh JWT 並簽發短效 access JWT。',
+      '驗證 refresh HttpOnly Cookie 中 JWT 的簽章與效期，通過後簽發新的 access JWT 與 refresh JWT。',
   })
-  @ApiResponse({ status: 200, description: 'Token 輪替成功。' })
+  @ApiResponse({ status: 200, description: 'Token 更新成功。' })
   @ApiResponse({
     status: 401,
-    description: 'Refresh Token 無效、過期、撤銷或重放。',
+    description: 'Refresh Token 缺失、無效或過期。',
   })
   async refresh(
     @Req() request: Request,
@@ -205,39 +205,34 @@ export class AuthController {
   @ApiCookieAuth()
   @ApiOperation({
     summary: 'Get current user / 取得目前使用者',
-    description: '驗證短效 access JWT 與其 Session，回傳 ACTIVE 使用者。',
+    description:
+      '驗證 access JWT 的簽章與效期，並以 JWT 內的使用者 ID 查詢資料庫，回傳 ACTIVE 使用者。',
   })
   @ApiResponse({ status: 200, description: '目前使用者。' })
   @ApiResponse({
     status: 401,
-    description: 'Access JWT 缺失、無效、過期或已撤銷。',
+    description: 'Access JWT 缺失、無效或過期，或使用者不可登入。',
   })
   async me(@Req() request: AuthenticatedRequest) {
-    const user = await this.authService.getCurrentUser(
-      request.user.id,
-    );
+    const user = await this.authService.getCurrentUser(request.user.id);
 
-    return this.toAuthSessionData(
-      user,
-      request.user.accessTokenExpiresAt,
-    );
+    return this.toAuthSessionData(user, request.user.accessTokenExpiresAt);
   }
-@Post('logout')
-@HttpCode(HttpStatus.OK)
-@ApiCookieAuth()
-@ApiOperation({
-  summary: 'Logout / 登出',
-  description:
-    '清除目前瀏覽器的 access 與 refresh Cookie。已簽發的 JWT 會在各自到期時失效。',
-})
-@ApiResponse({ status: 200, description: '登入 Cookie 已清除。' })
-logout(
-  @Res({ passthrough: true }) response: Response,
-) {
-  this.authCookies.clearLoginCookies(response);
 
-  return { success: true };
-}
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Logout / 登出',
+    description:
+      '清除目前瀏覽器的 access 與 refresh Cookie。JWT 為無狀態，已簽發的 Token 會在各自到期時失效。',
+  })
+  @ApiResponse({ status: 200, description: '登入 Cookie 已清除。' })
+  logout(@Res({ passthrough: true }) response: Response) {
+    this.authCookies.clearLoginCookies(response);
+
+    return { success: true };
+  }
 
   private beginOAuth(
     provider: 'google' | 'github',
@@ -317,28 +312,35 @@ logout(
     };
   }
 
+  /**
+   * 只允許站內相對路徑，防止 open redirect。
+   * new URL() 解析時會自動移除 tab / 換行，
+   * 所以 "/\t/evil.com" 會被還原成 "//evil.com"，
+   * 因此除了檢查特殊字元，還要在解析後確認 origin 沒有變。
+   */
   private getSafeReturnTo(returnTo?: string): string {
     if (
       !returnTo ||
       !returnTo.startsWith('/') ||
-      returnTo.startsWith('//') ||
-      returnTo.includes('\\')
+      /[\\\r\n\t]/.test(returnTo)
     ) {
       return '/';
     }
 
-    return returnTo;
+    try {
+      const base = new URL(env.frontendUrl);
+      const url = new URL(returnTo, base);
+
+      if (url.origin !== base.origin) return '/';
+
+      return url.pathname + url.search + url.hash;
+    } catch {
+      return '/';
+    }
   }
 
   private readCookie(request: Request, name: string): string | undefined {
     const value = request.cookies?.[name] as unknown;
     return typeof value === 'string' && value ? value : undefined;
-  }
-
-  private readBearerToken(request: Request): string | undefined {
-    const authorization = request.headers.authorization;
-
-    if (!authorization?.startsWith('Bearer ')) return undefined;
-    return authorization.slice('Bearer '.length).trim() || undefined;
   }
 }

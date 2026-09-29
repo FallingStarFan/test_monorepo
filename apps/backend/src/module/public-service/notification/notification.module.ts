@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 
 import { NotificationController } from './notification.controller.js';
 
-import { AppNotificationService } from './app-notification/app-notification.service.js';
-import { EmailNotificationLogService} from './email-notification-log/email-notification-log.service.js';
-import { EmailService } from './services/email.service.js';
-import { ResendEmailProvider } from './intergration/resend/resend-email.provider.js';
 import { EMAIL_PROVIDER } from './intergration/emil.provider.js';
+import { ResendEmailProvider } from './intergration/resend/resend-email.provider.js';
+import { EmailService } from './services/email.service.js';
+import { AppNotificationService } from './tables/app-notification/app-notification.service.js';
+import { EmailNotificationLogService } from './tables/email-notification-log/email-notification-log.service.js';
 
 @Module({
   controllers: [NotificationController],

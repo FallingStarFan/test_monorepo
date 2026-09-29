@@ -27,6 +27,13 @@ type VerifiedToken = {
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 
+/**
+ * 負責簽發與驗證登入用 JWT。
+ *
+ * Access token 用於一般 API 身分驗證，有效期 15 分鐘；
+ * refresh token 用於換發 token，有效期 30 天。
+ * 兩者使用不同密鑰，並透過 payload.type 再次確認用途。
+ */
 @Injectable()
 export class JwtAuthService {
   constructor(
@@ -34,6 +41,7 @@ export class JwtAuthService {
     private readonly configService: ConfigService,
   ) {}
 
+  /** 簽發供一般 API 使用的 access token。 */
   async issueAccessToken(userId: string): Promise<IssuedToken> {
     return this.issueToken(
       userId,
@@ -43,6 +51,7 @@ export class JwtAuthService {
     );
   }
 
+  /** 簽發供刷新登入狀態使用的 refresh token。 */
   async issueRefreshToken(userId: string): Promise<IssuedToken> {
     return this.issueToken(
       userId,
@@ -52,14 +61,21 @@ export class JwtAuthService {
     );
   }
 
+  /** 驗證 access token，成功後回傳使用者 ID 與到期時間。 */
   async verifyAccessToken(token: string): Promise<VerifiedToken> {
     return this.verifyToken(token, 'access', this.accessSecret);
   }
 
+  /** 驗證 refresh token，成功後回傳使用者 ID 與到期時間。 */
   async verifyRefreshToken(token: string): Promise<VerifiedToken> {
     return this.verifyToken(token, 'refresh', this.refreshSecret);
   }
 
+  /**
+   * 簽發指定類型的 JWT。
+   *
+   * jti 為每次簽發建立不同 ID，避免同一使用者在同一秒取得內容完全相同的 token。
+   */
   private async issueToken(
     userId: string,
     type: TokenType,
@@ -76,7 +92,7 @@ export class JwtAuthService {
       },
     );
 
-    // 從實際簽出的 JWT 讀 exp，避免自行計算造成秒數誤差。
+    // 直接採用 JWT 內的 exp，讓回傳的到期時間與 token 實際到期時間一致。
     const payload = this.jwtService.decode<AuthJwtPayload>(token);
 
     if (typeof payload?.exp !== 'number') {
@@ -89,6 +105,11 @@ export class JwtAuthService {
     };
   }
 
+  /**
+   * 驗證簽章、有效期、演算法與 token 用途。
+   *
+   * 驗證失敗時統一回傳 401，避免把 JWT 函式庫的錯誤細節暴露給呼叫端。
+   */
   private async verifyToken(
     token: string,
     expectedType: TokenType,
@@ -103,6 +124,7 @@ export class JwtAuthService {
         },
       );
 
+      // verifyAsync 驗證 JWT；這裡再檢查應用程式要求的欄位與 token 類型。
       if (
         typeof payload.sub !== 'string' ||
         !payload.sub ||
@@ -123,10 +145,12 @@ export class JwtAuthService {
     }
   }
 
+  /** 讀取 access token 的簽章密鑰；未設定時拒絕簽發或驗證。 */
   private get accessSecret(): string {
     return this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
   }
 
+  /** 讀取 refresh token 的簽章密鑰；未設定時拒絕簽發或驗證。 */
   private get refreshSecret(): string {
     return this.configService.getOrThrow<string>('JWT_REFRESH_SECRET');
   }

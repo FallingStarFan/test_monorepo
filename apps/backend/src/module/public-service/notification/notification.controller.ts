@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import {
@@ -16,8 +17,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { AppNotificationService } from './app-notification/app-notification.service.js';
-import { EmailNotificationLogService } from './email-notification-log/email-notification-log.service.js';
+import type { PageQueryDto } from '@/common/pagination/page-query.dto.js';
+import { successResponse } from '@/common/response/response.util.js';
+import { AppNotificationService } from './tables/app-notification/app-notification.service.js';
+import { EmailNotificationLogService } from './tables/email-notification-log/email-notification-log.service.js';
 
 @ApiTags('Notification')
 @Controller('notification')
@@ -183,9 +186,22 @@ export class NotificationController {
     status: 200,
     description: '成功取得 Email Notification Log。',
   })
-  findEmailNotificationLogs() {
-    return this.emailNotificationLogService.findAll();
-  }
+   async findAll(@Query() query: PageQueryDto) {
+      const emailLogs = await this.emailNotificationLogService.findAllPageable(
+        query.page,
+        query.pageSize,
+        query.order,
+      );
+  
+      return successResponse(
+        200,
+        {
+          en: 'Users retrieved successfully',
+          zh: '取得使用者列表成功',
+        },
+        emailLogs ,
+      );
+    }
 
   @Get('email-logs/:id')
   @ApiOperation({
@@ -205,9 +221,24 @@ export class NotificationController {
     status: 404,
     description: '找不到指定的 Email Notification Log。',
   })
-  findEmailNotificationLog(
+  async findEmailNotificationLogByPage(
     @Param('id') id: string,
+    @Query() query: PageQueryDto,
   ) {
-    return this.emailNotificationLogService.findById(id);
-  }
+      const emailLogs = await this.emailNotificationLogService.findByIdPageable(
+        id,
+        query.page,
+        query.pageSize,
+        query.order,
+      );
+  
+      return successResponse(
+        200,
+        {
+          en: 'Users retrieved successfully',
+          zh: '取得使用者列表成功',
+        },
+        emailLogs ,
+      );
+    }
 }

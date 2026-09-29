@@ -9,10 +9,12 @@ import {
 
 
 
+
 import { Prisma, PrismaService } from '../../../prisma.js';
 import type { CreateUserDto } from './dto/create-user.dto.js';
 import type { UpdateUserDto } from './dto/update-user.dto.js';
 
+import { pageArgs, toPage } from '@/common/pagination/paginate.js';
 
 
 
@@ -72,13 +74,30 @@ export class UsersService {
   /**
    * Get all Users
    */
-  async findAll() {
-    return this.prisma.user.findMany({
-      select: this.userSelect,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+  // async findAll() {
+  //   return this.prisma.user.findMany({
+  //     select: this.userSelect,
+  //     orderBy: {
+  //       createdAt: 'desc',
+  //     },
+  //   });
+  // }
+
+  async findAllPageable(
+    page: number,
+    pageSize: number,
+    order: 'asc' | 'desc',
+  ) {
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        ...pageArgs({ page, pageSize }),
+        select: this.userSelect,
+        orderBy: [{ createdAt: order }, { id: 'asc' }],
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return toPage(items, total, page, pageSize);
   }
 
   /**

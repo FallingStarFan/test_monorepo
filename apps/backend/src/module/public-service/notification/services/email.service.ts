@@ -1,9 +1,9 @@
 import {
-  Inject,
-  Injectable,
+    Inject,
+    Injectable,
 } from '@nestjs/common';
 import { EMAIL_PROVIDER, type EmailProvider, type EmailSendParams } from '../intergration/emil.provider.js';
-import { EmailNotificationLogService } from '../email-notification-log/email-notification-log.service.js';
+import { EmailNotificationLogService } from '../tables/email-notification-log/email-notification-log.service.js';
 
 @Injectable()
 export class EmailService {
