@@ -1,24 +1,23 @@
 
 import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
+    Body,
+    Controller,
+    Get,
+    Param,
+    Patch,
+    Post,
+    Query,
 } from '@nestjs/common';
 
 import {
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
+    ApiBody,
+    ApiOperation,
+    ApiParam,
+    ApiResponse,
+    ApiTags,
 } from '@nestjs/swagger';
 
 import type { PageQueryDto } from '@/common/pagination/page-query.dto.js';
-import { successResponse } from '@/common/response/response.util.js';
 import { AppNotificationService } from './tables/app-notification/app-notification.service.js';
 import { EmailNotificationLogService } from './tables/email-notification-log/email-notification-log.service.js';
 
@@ -193,14 +192,7 @@ export class NotificationController {
         query.order,
       );
   
-      return successResponse(
-        200,
-        {
-          en: 'Users retrieved successfully',
-          zh: '取得使用者列表成功',
-        },
-        emailLogs ,
-      );
+      return emailLogs;
     }
 
   @Get('email-logs/:id')
@@ -232,13 +224,6 @@ export class NotificationController {
         query.order,
       );
   
-      return successResponse(
-        200,
-        {
-          en: 'Users retrieved successfully',
-          zh: '取得使用者列表成功',
-        },
-        emailLogs ,
-      );
+      return emailLogs;
     }
 }

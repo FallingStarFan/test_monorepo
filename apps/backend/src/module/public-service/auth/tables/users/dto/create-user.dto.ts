@@ -2,16 +2,15 @@
 // src/user/dto/create-user.dto.ts
 
 import {
-  IsBoolean,
-  IsEmail,
   IsArray,
-  IsEnum,
+  IsEmail,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
-} from 'class-validator';
-
+  IsBoolean,
+  IsEnum,
+} from '@/common/validation/validators.decorator.js';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserStatus } from '@/module/public-service/prisma.js';
 
@@ -63,7 +62,7 @@ export class CreateUserDto {
   })
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
+  @IsUUID()
   roleIds?: string[];
 
   @ApiPropertyOptional({

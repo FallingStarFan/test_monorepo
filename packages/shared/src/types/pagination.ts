@@ -1,5 +1,5 @@
 
-export interface PageMeta {
+export interface PaginationInfo {
   page: number;
   pageSize: number;
   total: number;
@@ -10,5 +10,5 @@ export interface PageMeta {
 
 export interface Paginated<T> {
   items: T[];
-  meta: PageMeta;
+  pagination: PaginationInfo;
 }

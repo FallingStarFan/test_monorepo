@@ -1,4 +1,4 @@
-import type { PageMeta, Paginated } from '@test/shared';
+import type {  Paginated, PaginationInfo } from '@test/shared';
 
 /**
  * 將頁碼與每頁筆數轉成 Prisma 查詢使用的 skip、take。
@@ -37,7 +37,7 @@ export function toPage<T>(
 ): Paginated<T> {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const meta: PageMeta = {
+  const meta: PaginationInfo = {
     page,
     pageSize,
     total,
@@ -46,7 +46,7 @@ export function toPage<T>(
     hasPrev: page > 1,
   };
 
-  return { items, meta };
+  return { items, pagination: meta };
 }
 
 

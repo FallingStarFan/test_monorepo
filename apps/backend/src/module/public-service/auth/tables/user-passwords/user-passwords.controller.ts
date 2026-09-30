@@ -1,21 +1,21 @@
 import {
-  Body,
-  Controller,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
+    Body,
+    Controller,
+    Param,
+    ParseUUIDPipe,
+    Patch,
+    Post,
 } from '@nestjs/common';
 
 import {
-  ApiBody,
-  ApiOperation,
-  ApiTags,
+    ApiBody,
+    ApiOperation,
+    ApiTags,
 } from '@nestjs/swagger';
 
 import { UserPasswordsService } from './user-passwords.service.js';
 
-import { successResponse } from '@/common/response/response.util.js';
+import { ApiResponse } from '@/common/response/response.util.js';
 
 class CreatePasswordDto {
   password!: string;
@@ -89,7 +89,7 @@ Set a password for a user.
      * 為什麼：
      * passwordHash 絕對不能回傳給前端。
      */
-    return successResponse(
+    return ApiResponse(
       201,
       {
         en: 'Password created successfully',
@@ -136,7 +136,7 @@ Update user's password.
         passwordHash,
       );
 
-    return successResponse(
+    return ApiResponse(
       200,
       {
         en: 'Password updated successfully',

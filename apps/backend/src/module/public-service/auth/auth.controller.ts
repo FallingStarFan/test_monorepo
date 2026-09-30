@@ -11,7 +11,6 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { AuthResponseMapper } from './auth-response.mapper.js';
 import {
   ApiBody,
   ApiCookieAuth,
@@ -20,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { AuthResponseMapper } from './auth-response.mapper.js';
 
 import { AuthSessionData, AuthUser } from '@test/shared';
 
@@ -33,7 +33,7 @@ import {
 import {
   JwtAuthGuard,
   type AuthenticatedRequest,
-} from './jwt/jwt-auth.guard.js';
+} from './guard/jwt-auth.guard.js';
 
 type PublicUserSource = {
   id: string;
@@ -91,8 +91,6 @@ export class AuthController {
     description: '驗證帳密，並設定 access 與 refresh HttpOnly JWT Cookie。',
   })
   @ApiBody({ type: PasswordLoginDto })
-  @ApiResponse({ status: 200, description: '登入成功。' })
-  @ApiResponse({ status: 401, description: '帳密錯誤或帳號不可登入。' })
   async loginWithPassword(
     @Body() dto: PasswordLoginDto,
     @Res({ passthrough: true }) response: Response,
@@ -117,8 +115,6 @@ export class AuthController {
     summary: 'Get current user / 取得目前使用者',
     description: '驗證 access JWT，並查詢目前使用者。',
   })
-  @ApiResponse({ status: 200, description: '目前使用者。' })
-  @ApiResponse({ status: 401, description: '未登入或帳號不可登入。' })
   async me(
     @Req() request: AuthenticatedRequest,
   ): Promise<AuthSessionData> {

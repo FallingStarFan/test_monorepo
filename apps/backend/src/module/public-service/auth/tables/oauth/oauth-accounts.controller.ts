@@ -10,7 +10,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { OauthAccountsService } from './oauth-accounts.service.js';
 
-import { successResponse } from '@/common/response/response.util.js';
+import { ApiResponse } from '@/common/response/response.util.js';
 
 @ApiTags('OAuth Accounts')
 @Controller('oauth-accounts')
@@ -46,7 +46,7 @@ Get all OAuth accounts belonging to a user.
      * OAuth Account 屬於列表資料，
      * 沒有資料時回傳 []，方便前端直接使用 map。
      */
-    return successResponse(
+    return ApiResponse(
       200,
       {
         en: 'OAuth accounts retrieved successfully',
@@ -77,7 +77,7 @@ Remove an OAuth account binding.
     const result =
       await this.oauthAccountService.remove(id);
 
-    return successResponse(
+    return ApiResponse(
       200,
       {
         en: 'OAuth account deleted successfully',

@@ -7,11 +7,11 @@ import {
     Delete,
     Get,
     Param,
+    ParseUUIDPipe,
     Patch,
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
 
 import {
     ApiBody,
@@ -23,10 +23,12 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UsersService } from './users.service.js';
 
-import { successResponse } from '@/common/response/response.util.js';
-import  { PageQueryDto } from '@/common/pagination/page-query.dto.js';
+import { PageQueryDto } from '@/common/pagination/page-query.dto.js';
+import { ApiResponse } from '@/common/response/response.util.js';
+import { RequireStudioAdmin } from '../../guard/require-role/app-role.decorator.js';
 
 @ApiTags('Auth/Users')
+@RequireStudioAdmin()
 @Controller('users')
 export class UsersController {
   constructor(
@@ -40,35 +42,11 @@ export class UsersController {
   @Post()
   @ApiOperation({
     summary: 'Create user / 建立使用者',
-    description: `
-Create a new user.
-
-建立一個新的使用者。
-`,
+    description: '建立一個新的使用者。',
   })
-  @ApiBody({
-    schema: {
-      example: {
-        email: 'user@example.com',
-        emailVerified: false,
-        name: 'John Doe',
-        image: 'https://example.com/avatar.jpg',
-        roleIds: ['00000000-0000-0000-0000-000000000000'],
-        status: 'ACTIVE',
-      },
-    },
-  })
+  @ApiBody({ type: CreateUserDto })
   async create(@Body() dto: CreateUserDto) {
-    const user = await this.userService.create(dto);
-
-    return successResponse(
-      201,
-      {
-        en: 'User created successfully',
-        zh: '建立使用者成功',
-      },
-      user,
-    );
+    return this.userService.create(dto);
   }
 
   /**
@@ -78,11 +56,7 @@ Create a new user.
   @Get()
   @ApiOperation({
     summary: 'Get users / 取得使用者列表',
-    description: `
-  Get a paginated list of users.
-
-  分頁取得使用者列表。
-  `,
+    description: `分頁取得使用者列表。`,
   })
   async findAll(@Query() query: PageQueryDto) {
     const users = await this.userService.findAllPageable(
@@ -91,14 +65,7 @@ Create a new user.
       query.order,
     );
 
-    return successResponse(
-      200,
-      {
-        en: 'Users retrieved successfully',
-        zh: '取得使用者列表成功',
-      },
-      users,
-    );
+    return users;
   }
   /**
    * GET /users/:id
@@ -107,25 +74,13 @@ Create a new user.
   @Get(':id')
   @ApiOperation({
     summary: 'Get user / 取得使用者',
-    description: `
-Get a user by ID.
-
-根據使用者 ID 取得單一使用者資料。
-`,
+    description: `根據使用者 ID 取得單一使用者資料。`,
   })
-  async findById(@Param('id') id: string) {
-    const user = await this.userService.findById(id);
-
-    return successResponse(
-      200,
-      {
-        en: 'User retrieved successfully',
-        zh: '取得使用者成功',
-      },
-      user,
-    );
+  async findById(
+  @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.userService.findById(id);
   }
-
   /**
    * PATCH /users/:id
    * 更新使用者
@@ -139,32 +94,14 @@ Update an existing user by ID.
 根據使用者 ID 更新使用者資料。
 `,
   })
-  @ApiBody({
-    schema: {
-      example: {
-        email: 'updated@example.com',
-        emailVerified: true,
-        name: 'Updated Name',
-        image: 'https://example.com/new-avatar.jpg',
-        roleIds: ['00000000-0000-0000-0000-000000000000'],
-        status: 'ACTIVE',
-      },
-    },
-  })
+  @ApiBody({ type: UpdateUserDto })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
   ) {
     const user = await this.userService.update(id, dto);
 
-    return successResponse(
-      200,
-      {
-        en: 'User updated successfully',
-        zh: '更新使用者成功',
-      },
-      user,
-    );
+    return user;
   }
 
   /**
@@ -183,7 +120,7 @@ Delete a user by ID.
   async remove(@Param('id') id: string) {
     const result = await this.userService.remove(id);
 
-    return successResponse(
+    return ApiResponse(
       200,
       {
         en: 'User deleted successfully',

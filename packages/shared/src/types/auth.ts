@@ -35,9 +35,7 @@ export interface PasswordLoginRequest {
   password: string;
 }
 
-export interface PasswordRegisterRequest extends PasswordLoginRequest {
-  name?: string;
-}
+
 
 export interface RefreshSessionData {
   accessToken: AccessTokenMetadata;

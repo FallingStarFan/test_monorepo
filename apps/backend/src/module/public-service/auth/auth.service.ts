@@ -7,12 +7,12 @@ import {
 import * as bcrypt from 'bcrypt';
 
 import { UserStatus } from '../prisma.js';
-import { JwtAuthService } from './jwt/jwt.service.js';
+import { JwtAuthService } from './guard/jwt.service.js';
 import { OauthAccountsService } from './tables/oauth/oauth-accounts.service.js';
 import { UserPasswordsService } from './tables/user-passwords/user-passwords.service.js';
 
-import { UsersService } from './tables/users/users.service.js';
 import { AuthRolesService } from './tables/user-role/auth-role.service.js';
+import { UsersService } from './tables/users/users.service.js';
 
 export interface OAuthProfile {
   provider: 'google' | 'github';

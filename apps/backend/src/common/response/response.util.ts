@@ -1,6 +1,6 @@
 import type { ApiMessage, ApiResponse } from '@test/shared';
 
-export function successResponse<T>(
+export function ApiResponse<T>(
   statusCode: number,
   message: ApiMessage,
   data: T,
@@ -9,16 +9,5 @@ export function successResponse<T>(
     statusCode,
     message,
     data,
-  };
-}
-
-export function errorResponse(
-  statusCode: number,
-  message: ApiMessage,
-): ApiResponse<null> {
-  return {
-    statusCode,
-    message,
-    data: null,
   };
 }

@@ -1,39 +1,39 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Inject,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Inject,
+    Param,
+    Patch,
+    Post,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
 
 
 import {
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
+    ApiBody,
+    ApiOperation,
+    ApiParam,
+    ApiQuery,
+    ApiResponse,
+    ApiTags,
+    ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { randomUUID } from 'node:crypto';
 
 import type {
-  CreateStoredFileMetaRequest,
-  UpdateStoredFileMetaRequest,
+    CreateStoredFileMetaRequest,
+    UpdateStoredFileMetaRequest,
 } from '@test/shared';
 
 
-import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard.js';
 import {
-  FILE_STORAGE,
-  type FileStorage,
+    FILE_STORAGE,
+    type FileStorage,
 } from './intergration/file-storage.provider.js';
 import { StoredFileMetaService } from './store-file-meta/stored-file-meta.service.js';
 

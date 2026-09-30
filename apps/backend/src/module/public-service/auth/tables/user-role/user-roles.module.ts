@@ -2,6 +2,7 @@
 import { Module } from '@nestjs/common';
 import { UserRolesService } from './user-roles.service.js';
 import { AuthRolesService } from './auth-role.service.js';
+import { UserRolesController } from './user-roles.controller.js';
 
 
 
@@ -12,7 +13,7 @@ import { AuthRolesService } from './auth-role.service.js';
 @Module({
  
   controllers: [
-    // OauthAccountsController,
+    UserRolesController,
   ],
   providers: [
    UserRolesService,

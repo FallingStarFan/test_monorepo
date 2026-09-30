@@ -6,7 +6,7 @@ import { App } from 'supertest/types';
 
 import { AppModule } from '../src/app.module.js';
 import { HttpExceptionFilter } from '../src/common/response/filters/http-exception.filter.js';
-import { JwtAuthService } from '../src/module/public-service/auth/jwt/jwt.service.js';
+import { JwtAuthService } from '../src/module/public-service/auth/guard/jwt.service.js';
 import { PERMISSION_CATALOG } from '../src/module/public-service/auth/permission/permission.constants.js';
 import { PrismaService } from '../src/module/public-service/prisma/prisma.service.js';
 
