@@ -1,17 +1,6 @@
 // oauth.controller.ts
-import {
-  Controller,
-  Get,
-  Query,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { randomBytes } from 'node:crypto';
 
@@ -19,6 +8,7 @@ import { AuthCookieService } from '@/config/auth-cookie.service.js';
 import env from '@/config/env.js';
 
 import { AuthService, type OAuthProfile } from './auth.service.js';
+import { OAuthStartQueryDto } from './dto/oauth-start-query.dto.js';
 import {
   GithubOAuthGuard,
   GoogleOAuthGuard,
@@ -38,11 +28,8 @@ export class OAuthController {
     description: '以瀏覽器導頁啟動 OAuth；returnTo 僅接受站內相對路徑。',
   })
   @ApiResponse({ status: 302, description: '導向 Google OAuth。' })
-  googleLogin(
-    @Query('returnTo') returnTo: string | undefined,
-    @Res() response: Response,
-  ) {
-    return this.beginOAuth('google', returnTo, response);
+  googleLogin(@Query() query: OAuthStartQueryDto, @Res() response: Response) {
+    return this.beginOAuth('google', query.returnTo, response);
   }
 
   @Get('google/start')
@@ -55,10 +42,7 @@ export class OAuthController {
   @UseGuards(GoogleOAuthGuard)
   @ApiResponse({ status: 302, description: '設定 JWT Cookie 並導回前端。' })
   @ApiResponse({ status: 401, description: 'OAuth 或 state 驗證失敗。' })
-  async googleCallback(
-    @Req() request: Request,
-    @Res() response: Response,
-  ) {
+  async googleCallback(@Req() request: Request, @Res() response: Response) {
     return this.completeOAuth(request, response);
   }
 
@@ -68,11 +52,8 @@ export class OAuthController {
     description: '以瀏覽器導頁啟動 OAuth；returnTo 僅接受站內相對路徑。',
   })
   @ApiResponse({ status: 302, description: '導向 GitHub OAuth。' })
-  githubLogin(
-    @Query('returnTo') returnTo: string | undefined,
-    @Res() response: Response,
-  ) {
-    return this.beginOAuth('github', returnTo, response);
+  githubLogin(@Query() query: OAuthStartQueryDto, @Res() response: Response) {
+    return this.beginOAuth('github', query.returnTo, response);
   }
 
   @Get('github/start')
@@ -85,10 +66,7 @@ export class OAuthController {
   @UseGuards(GithubOAuthGuard)
   @ApiResponse({ status: 302, description: '設定 JWT Cookie 並導回前端。' })
   @ApiResponse({ status: 401, description: 'OAuth 或 state 驗證失敗。' })
-  async githubCallback(
-    @Req() request: Request,
-    @Res() response: Response,
-  ) {
+  async githubCallback(@Req() request: Request, @Res() response: Response) {
     return this.completeOAuth(request, response);
   }
 
@@ -100,11 +78,7 @@ export class OAuthController {
   ) {
     const state = randomBytes(32).toString('base64url');
 
-    this.authCookies.setOAuthCookie(
-      response,
-      env.oauthStateCookieName,
-      state,
-    );
+    this.authCookies.setOAuthCookie(response, env.oauthStateCookieName, state);
     this.authCookies.setOAuthCookie(
       response,
       env.oauthReturnToCookieName,
@@ -117,22 +91,13 @@ export class OAuthController {
   }
 
   /** OAuth 驗證成功後登入使用者、設定 JWT Cookie，並導回前端。 */
-  private async completeOAuth(
-    request: Request,
-    response: Response,
-  ) {
+  private async completeOAuth(request: Request, response: Response) {
     const profile = request.user as OAuthProfile;
     const returnTo =
       this.readCookie(request, env.oauthReturnToCookieName) ?? '/';
 
-    this.authCookies.clearOAuthCookie(
-      response,
-      env.oauthStateCookieName,
-    );
-    this.authCookies.clearOAuthCookie(
-      response,
-      env.oauthReturnToCookieName,
-    );
+    this.authCookies.clearOAuthCookie(response, env.oauthStateCookieName);
+    this.authCookies.clearOAuthCookie(response, env.oauthReturnToCookieName);
 
     const result = await this.authService.loginWithOAuth(profile);
 
@@ -148,11 +113,7 @@ export class OAuthController {
 
   /** 僅接受前端站內相對路徑，避免 OAuth 完成後導向外部網站。 */
   private getSafeReturnTo(returnTo?: string): string {
-    if (
-      !returnTo ||
-      !returnTo.startsWith('/') ||
-      /[\\\r\n\t]/.test(returnTo)
-    ) {
+    if (!returnTo || !returnTo.startsWith('/') || /[\\\r\n\t]/.test(returnTo)) {
       return '/';
     }
 
@@ -168,13 +129,8 @@ export class OAuthController {
     }
   }
 
-  private readCookie(
-    request: Request,
-    name: string,
-  ): string | undefined {
+  private readCookie(request: Request, name: string): string | undefined {
     const value = request.cookies?.[name] as unknown;
-    return typeof value === 'string' && value
-      ? value
-      : undefined;
+    return typeof value === 'string' && value ? value : undefined;
   }
 }

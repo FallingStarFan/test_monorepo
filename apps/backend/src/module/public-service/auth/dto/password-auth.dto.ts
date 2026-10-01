@@ -1,12 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsArray,
   IsEmail,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
-  MinLength
+  MinLength,
 } from '@/common/validation/validators.decorator.js';
 
 export class PasswordLoginDto {
@@ -22,7 +20,11 @@ export class PasswordLoginDto {
 }
 
 export class PasswordRegisterDto extends PasswordLoginDto {
-  @ApiPropertyOptional({ example: 'Jane Doe', description: '顯示名稱。', maxLength: 100 })
+  @ApiPropertyOptional({
+    example: 'Jane Doe',
+    description: '顯示名稱。',
+    maxLength: 100,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100)

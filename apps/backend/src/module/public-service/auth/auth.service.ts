@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { MESSAGES } from '@/common/response/messages.js';
 
 import { UserStatus } from '../prisma.js';
 import { JwtAuthService } from './guard/jwt.service.js';
@@ -53,9 +54,7 @@ export class AuthService {
 
     this.assertActiveUser(user.status);
 
-    const userPassword = await this.userPasswordService.findByUserId(
-      user.id,
-    );
+    const userPassword = await this.userPasswordService.findByUserId(user.id);
 
     if (
       !userPassword ||
@@ -77,10 +76,7 @@ export class AuthService {
 
     if (existingUser) {
       throw new ConflictException({
-        message: {
-          en: 'Email already exists',
-          zh: 'Email 已經存在',
-        },
+        message: MESSAGES.EMAIL_ALREADY_EXISTS,
       });
     }
 
@@ -103,17 +99,16 @@ export class AuthService {
    * 未綁定時，依已驗證的 Email 連結既有帳號，或建立新使用者。
    */
   async loginWithOAuth(profile: OAuthProfile) {
-    const account =
-      await this.oauthAccountService.findByProviderAccount(
-        profile.provider,
-        profile.providerAccountId,
-      );
+    const account = await this.oauthAccountService.findByProviderAccount(
+      profile.provider,
+      profile.providerAccountId,
+    );
 
     if (account) {
       const user = await this.userService.findById(account.userId);
 
       if (!user) {
-        throw new UnauthorizedException('使用者不存在');
+        throw new UnauthorizedException({ message: MESSAGES.USER_NOT_FOUND });
       }
 
       this.assertActiveUser(user.status);
@@ -128,10 +123,7 @@ export class AuthService {
     // OAuth 提供者未確認 Email 時，不自動連結同 Email 的既有帳號。
     if (user && !profile.emailVerified) {
       throw new UnauthorizedException({
-        message: {
-          en: 'This OAuth email cannot be linked automatically',
-          zh: '此 OAuth Email 無法自動連結既有帳號',
-        },
+        message: MESSAGES.OAUTH_EMAIL_NOT_LINKABLE,
       });
     }
 
@@ -162,13 +154,12 @@ export class AuthService {
    * 此端點只回傳 token 資訊，不需要查詢角色。
    */
   async refresh(refreshToken: string) {
-    const verified =
-      await this.jwtAuthService.verifyRefreshToken(refreshToken);
+    const verified = await this.jwtAuthService.verifyRefreshToken(refreshToken);
 
     const user = await this.userService.findById(verified.userId);
 
     if (!user) {
-      throw new UnauthorizedException('使用者不存在');
+      throw new UnauthorizedException({ message: MESSAGES.USER_NOT_FOUND });
     }
 
     this.assertActiveUser(user.status);
@@ -191,13 +182,12 @@ export class AuthService {
    * 讓 guard 取得 user 與 access token 到期時間。
    */
   async validateAccessToken(token: string) {
-    const verified =
-      await this.jwtAuthService.verifyAccessToken(token);
+    const verified = await this.jwtAuthService.verifyAccessToken(token);
 
     const user = await this.userService.findById(verified.userId);
 
     if (!user) {
-      throw new UnauthorizedException('使用者不存在');
+      throw new UnauthorizedException({ message: MESSAGES.USER_NOT_FOUND });
     }
 
     this.assertActiveUser(user.status);
@@ -219,7 +209,7 @@ export class AuthService {
     const user = await this.userService.findById(userId);
 
     if (!user) {
-      throw new UnauthorizedException('使用者不存在');
+      throw new UnauthorizedException({ message: MESSAGES.USER_NOT_FOUND });
     }
 
     this.assertActiveUser(user.status);
@@ -228,13 +218,13 @@ export class AuthService {
 
     return { user, roles };
   }
-  
+
   /** 取得目前仍可登入的使用者。 */
   async getCurrentUser(userId: string) {
     const user = await this.userService.findById(userId);
 
     if (!user) {
-      throw new UnauthorizedException('使用者不存在');
+      throw new UnauthorizedException({ message: MESSAGES.USER_NOT_FOUND });
     }
 
     this.assertActiveUser(user.status);
@@ -247,8 +237,6 @@ export class AuthService {
     return this.authRolesService.getAuthRoles(userId);
   }
 
-
-
   /**
    * 登入成功後，查詢各 App 的角色並簽發兩種 JWT。
    *
@@ -256,9 +244,7 @@ export class AuthService {
    */
   private async createLoginResult(
     userId: string,
-    user: NonNullable<
-      Awaited<ReturnType<UsersService['findById']>>
-    >,
+    user: NonNullable<Awaited<ReturnType<UsersService['findById']>>>,
   ) {
     const [roles, accessToken, refreshToken] = await Promise.all([
       this.authRolesService.getAuthRoles(userId),
@@ -278,10 +264,7 @@ export class AuthService {
   private assertActiveUser(status: UserStatus): void {
     if (status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException({
-        message: {
-          en: 'User account is not active',
-          zh: '使用者帳號目前無法登入',
-        },
+        message: MESSAGES.ACCOUNT_INACTIVE,
       });
     }
   }
@@ -289,10 +272,7 @@ export class AuthService {
   /** 統一帳密錯誤訊息，避免透露 Email 是否存在。 */
   private invalidCredentials(): UnauthorizedException {
     return new UnauthorizedException({
-      message: {
-        en: 'Invalid email or password',
-        zh: 'Email 或密碼錯誤',
-      },
+      message: MESSAGES.INVALID_CREDENTIALS,
     });
   }
 }

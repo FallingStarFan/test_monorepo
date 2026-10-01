@@ -58,7 +58,6 @@ export const ModelName = {
   UserPassword: 'UserPassword',
   OauthAccount: 'OauthAccount',
   Session: 'Session',
-  Permission: 'Permission',
   RolePermission: 'RolePermission',
   StoredFileMeta: 'StoredFileMeta',
   EmailNotificationLog: 'EmailNotificationLog',
@@ -162,18 +161,6 @@ export const SessionScalarFieldEnum = {
 } as const
 
 export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
-
-
-export const PermissionScalarFieldEnum = {
-  id: 'id',
-  code: 'code',
-  name: 'name',
-  description: 'description',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type PermissionScalarFieldEnum = (typeof PermissionScalarFieldEnum)[keyof typeof PermissionScalarFieldEnum]
 
 
 export const RolePermissionScalarFieldEnum = {

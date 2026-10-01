@@ -8,7 +8,7 @@ export default defineConfig({
   schema: "./db",
   migrations: {
     path: "./migrations",
-    seed: 'tsx ./seed/seed.ts',
+    seed: 'tsx ./src/module/public-service/prisma/seed/seed.ts',
   },
   datasource: {
     url: env.publicServiceDatabaseUrl,

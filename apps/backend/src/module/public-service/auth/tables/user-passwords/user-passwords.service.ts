@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
+import { MESSAGES } from '@/common/response/messages.js';
 
 @Injectable()
 export class UserPasswordsService {
@@ -54,10 +54,7 @@ export class UserPasswordsService {
         error.code === 'P2002'
       ) {
         throw new ConflictException({
-          message: {
-            en: 'User password already exists',
-            zh: '使用者密碼已經存在',
-          },
+          message: MESSAGES.USER_PASSWORD_ALREADY_EXISTS,
         });
       }
 
@@ -76,10 +73,7 @@ export class UserPasswordsService {
 
     if (!password) {
       throw new NotFoundException({
-        message: {
-          en: 'User password not found',
-          zh: '找不到使用者密碼',
-        },
+        message: MESSAGES.USER_PASSWORD_NOT_FOUND,
       });
     }
 
@@ -108,10 +102,7 @@ export class UserPasswordsService {
 
     if (!password) {
       throw new NotFoundException({
-        message: {
-          en: 'User password not found',
-          zh: '找不到使用者密碼',
-        },
+        message: MESSAGES.USER_PASSWORD_NOT_FOUND,
       });
     }
 
@@ -126,4 +117,3 @@ export class UserPasswordsService {
     };
   }
 }
-

@@ -8,18 +8,11 @@ import {
   type ExceptionFilter,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import type {
-  ApiFieldError,
-  ApiMessage,
-  ApiResponse,
-} from '@test/shared';
+import type { ApiFieldError, ApiMessage, ApiResponse } from '@test/shared';
+import { MESSAGES } from '../messages.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isFieldError(value: unknown): value is ApiFieldError {
@@ -32,16 +25,16 @@ function isFieldError(value: unknown): value is ApiFieldError {
 }
 
 const DEFAULT_MESSAGES: Partial<Record<number, ApiMessage>> = {
-  400: { en: 'Bad request', zh: '請求資料錯誤' },
-  401: { en: 'Authentication is required', zh: '需要登入驗證' },
-  403: { en: 'Forbidden', zh: '沒有權限執行此操作' },
-  404: { en: 'Resource not found', zh: '找不到指定資源' },
-  409: { en: 'Conflict', zh: '資料發生衝突' },
-  422: { en: 'Unprocessable entity', zh: '資料驗證失敗' },
-  429: { en: 'Too many requests', zh: '請求次數過多' },
-  500: { en: 'Internal server error', zh: '伺服器內部錯誤' },
-  502: { en: 'Bad gateway', zh: '上游伺服器錯誤' },
-  503: { en: 'Service unavailable', zh: '服務暫時無法使用' },
+  400: MESSAGES.BAD_REQUEST,
+  401: MESSAGES.AUTHENTICATION_REQUIRED,
+  403: MESSAGES.PERMISSION_DENIED,
+  404: MESSAGES.RESOURCE_NOT_FOUND,
+  409: MESSAGES.CONFLICT,
+  422: MESSAGES.UNPROCESSABLE_ENTITY,
+  429: MESSAGES.TOO_MANY_REQUESTS,
+  500: MESSAGES.INTERNAL_SERVER_ERROR,
+  502: MESSAGES.BAD_GATEWAY,
+  503: MESSAGES.SERVICE_UNAVAILABLE,
 };
 
 @Catch()
@@ -71,9 +64,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     const exceptionBody =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : undefined;
+      exception instanceof HttpException ? exception.getResponse() : undefined;
 
     const message = this.getMessage(exceptionBody, statusCode);
     const code =
@@ -104,12 +95,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    return (
-      DEFAULT_MESSAGES[statusCode] ?? {
-        en: 'Request failed',
-        zh: '請求失敗',
-      }
-    );
+    return DEFAULT_MESSAGES[statusCode] ?? MESSAGES.REQUEST_FAILED;
   }
 
   private getErrors(body: unknown): ApiFieldError[] | undefined {
@@ -127,11 +113,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // 相容 Nest 預設的字串／字串陣列錯誤。
-    const rawMessage = typeof body === 'string'
-      ? body
-      : isRecord(body)
-        ? body.message
-        : undefined;
+    const rawMessage =
+      typeof body === 'string'
+        ? body
+        : isRecord(body)
+          ? body.message
+          : undefined;
 
     const messages =
       typeof rawMessage === 'string'

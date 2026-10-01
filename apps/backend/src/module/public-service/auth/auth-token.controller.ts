@@ -7,18 +7,22 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiCookieAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 
 import { AuthCookieService } from '@/config/auth-cookie.service.js';
+import {
+  ApiEnvelopeResponse,
+  ApiErrorEnvelopeResponse,
+} from '@/common/response/swagger-response.decorator.js';
+import { MESSAGES } from '@/common/response/messages.js';
 import env from '@/config/env.js';
 
 import { AuthService } from './auth.service.js';
+import {
+  RefreshSessionDataDto,
+  SuccessDataDto,
+} from './dto/auth-response.dto.js';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -36,26 +40,21 @@ export class AuthTokenController {
     description:
       '驗證 refresh HttpOnly Cookie，重新簽發 access 與 refresh JWT。',
   })
-  @ApiResponse({ status: 200, description: 'Token 更新成功。' })
-  @ApiResponse({
-    status: 401,
-    description: 'Refresh Token 缺失、無效或過期。',
+  @ApiEnvelopeResponse({
+    status: HttpStatus.OK,
+    message: MESSAGES.TOKEN_REFRESHED,
+    data: RefreshSessionDataDto,
   })
+  @ApiErrorEnvelopeResponse(401, MESSAGES.TOKEN_INVALID)
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refreshToken = this.readCookie(
-      request,
-      env.refreshCookieName,
-    );
+    const refreshToken = this.readCookie(request, env.refreshCookieName);
 
     if (!refreshToken) {
       throw new UnauthorizedException({
-        message: {
-          en: 'Refresh token is missing',
-          zh: '缺少 Refresh Token',
-        },
+        message: MESSAGES.REFRESH_TOKEN_MISSING,
       });
     }
 
@@ -81,20 +80,19 @@ export class AuthTokenController {
     description:
       '清除目前瀏覽器的 access 與 refresh Cookie。已簽發的 JWT 仍會在到期時失效。',
   })
-  @ApiResponse({ status: 200, description: '登入 Cookie 已清除。' })
+  @ApiEnvelopeResponse({
+    status: HttpStatus.OK,
+    message: MESSAGES.LOGOUT_SUCCESS,
+    data: SuccessDataDto,
+  })
   logout(@Res({ passthrough: true }) response: Response) {
     this.authCookies.clearLoginCookies(response);
     return { success: true };
   }
 
-  private readCookie(
-    request: Request,
-    name: string,
-  ): string | undefined {
+  private readCookie(request: Request, name: string): string | undefined {
     const value = request.cookies?.[name] as unknown;
 
-    return typeof value === 'string' && value
-      ? value
-      : undefined;
+    return typeof value === 'string' && value ? value : undefined;
   }
 }

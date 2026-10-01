@@ -3,6 +3,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
+import { MESSAGES } from '@/common/response/messages.js';
 
 type TokenType = 'access' | 'refresh';
 
@@ -116,13 +117,10 @@ export class JwtAuthService {
     secret: string,
   ): Promise<VerifiedToken> {
     try {
-      const payload = await this.jwtService.verifyAsync<AuthJwtPayload>(
-        token,
-        {
-          secret,
-          algorithms: ['HS256'],
-        },
-      );
+      const payload = await this.jwtService.verifyAsync<AuthJwtPayload>(token, {
+        secret,
+        algorithms: ['HS256'],
+      });
 
       // verifyAsync 驗證 JWT；這裡再檢查應用程式要求的欄位與 token 類型。
       if (
@@ -133,7 +131,7 @@ export class JwtAuthService {
         !Number.isSafeInteger(payload.exp) ||
         payload.exp <= 0
       ) {
-        throw new UnauthorizedException('JWT 內容無效');
+        throw new UnauthorizedException({ message: MESSAGES.TOKEN_INVALID });
       }
 
       return {
@@ -141,7 +139,9 @@ export class JwtAuthService {
         expiresAt: new Date(payload.exp * 1000),
       };
     } catch {
-      throw new UnauthorizedException('JWT 無效或已過期');
+      throw new UnauthorizedException({
+        message: MESSAGES.TOKEN_INVALID_OR_EXPIRED,
+      });
     }
   }
 

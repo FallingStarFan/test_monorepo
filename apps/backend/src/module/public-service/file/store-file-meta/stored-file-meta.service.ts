@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { MESSAGES } from '@/common/response/messages.js';
 
 import type {
   CreateStoredFileMetaRequest,
@@ -20,7 +21,9 @@ export class StoredFileMetaService {
       where: { id },
     });
 
-    if (!file) throw new NotFoundException('File not found');
+    if (!file) {
+      throw new NotFoundException({ message: MESSAGES.FILE_NOT_FOUND });
+    }
     return file;
   }
 
@@ -29,7 +32,9 @@ export class StoredFileMetaService {
       where: { objectKey },
     });
 
-    if (!file) throw new NotFoundException('File not found');
+    if (!file) {
+      throw new NotFoundException({ message: MESSAGES.FILE_NOT_FOUND });
+    }
     return file;
   }
 
@@ -86,10 +91,7 @@ export class StoredFileMetaService {
 
     if (!Number.isSafeInteger(value) || value < 0) {
       throw new BadRequestException({
-        message: {
-          en: 'bytes must be a non-negative safe integer',
-          zh: 'bytes 必須是非負安全整數',
-        },
+        message: MESSAGES.FILE_BYTES_INVALID,
       });
     }
 

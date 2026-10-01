@@ -11,17 +11,16 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiCookieAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AuthResponseMapper } from './auth-response.mapper.js';
 
-import { AuthSessionData, AuthUser } from '@test/shared';
+import type { AuthSessionData } from '@test/shared';
+import {
+  ApiEnvelopeResponse,
+  ApiErrorEnvelopeResponse,
+} from '@/common/response/swagger-response.decorator.js';
+import { MESSAGES } from '@/common/response/messages.js';
 
 import { AuthCookieService } from '@/config/auth-cookie.service.js';
 
@@ -30,21 +29,11 @@ import {
   PasswordLoginDto,
   PasswordRegisterDto,
 } from './dto/password-auth.dto.js';
+import { AuthSessionDataDto } from './dto/auth-response.dto.js';
 import {
   JwtAuthGuard,
   type AuthenticatedRequest,
 } from './guard/jwt-auth.guard.js';
-
-type PublicUserSource = {
-  id: string;
-  email: string | null;
-  emailVerified: boolean;
-  name: string | null;
-  image: string | null;
-  status: AuthUser['status'];
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -62,9 +51,13 @@ export class AuthController {
     description: '建立帳密帳號，並設定 access 與 refresh HttpOnly JWT Cookie。',
   })
   @ApiBody({ type: PasswordRegisterDto })
-  @ApiResponse({ status: 201, description: '帳號建立並登入成功。' })
-  @ApiResponse({ status: 400, description: '請求資料格式錯誤。' })
-  @ApiResponse({ status: 409, description: 'Email 已存在。' })
+  @ApiEnvelopeResponse({
+    status: HttpStatus.CREATED,
+    message: MESSAGES.AUTH_REGISTERED,
+    data: AuthSessionDataDto,
+  })
+  @ApiErrorEnvelopeResponse(400, MESSAGES.BAD_REQUEST)
+  @ApiErrorEnvelopeResponse(409, MESSAGES.EMAIL_ALREADY_EXISTS)
   async register(
     @Body() dto: PasswordRegisterDto,
     @Res({ passthrough: true }) response: Response,
@@ -80,17 +73,27 @@ export class AuthController {
       refreshToken: result.refreshToken.token,
     });
 
-    return this.authResponseMapper.toSessionData(result.user, result.roles, result.accessToken.expiresAt);
+    return this.authResponseMapper.toSessionData(
+      result.user,
+      result.roles,
+      result.accessToken.expiresAt,
+    );
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ whitelist: true }))
   @ApiOperation({
     summary: 'Login with email and password / 帳密登入',
     description: '驗證帳密，並設定 access 與 refresh HttpOnly JWT Cookie。',
   })
   @ApiBody({ type: PasswordLoginDto })
+  @ApiEnvelopeResponse({
+    status: HttpStatus.OK,
+    message: MESSAGES.AUTH_LOGIN_SUCCESS,
+    data: AuthSessionDataDto,
+  })
+  @ApiErrorEnvelopeResponse(400, MESSAGES.BAD_REQUEST)
+  @ApiErrorEnvelopeResponse(401, MESSAGES.INVALID_CREDENTIALS)
   async loginWithPassword(
     @Body() dto: PasswordLoginDto,
     @Res({ passthrough: true }) response: Response,
@@ -105,7 +108,11 @@ export class AuthController {
       refreshToken: result.refreshToken.token,
     });
 
-    return this.authResponseMapper.toSessionData(result.user, result.roles,  result.accessToken.expiresAt);
+    return this.authResponseMapper.toSessionData(
+      result.user,
+      result.roles,
+      result.accessToken.expiresAt,
+    );
   }
 
   @Get('me')
@@ -115,11 +122,16 @@ export class AuthController {
     summary: 'Get current user / 取得目前使用者',
     description: '驗證 access JWT，並查詢目前使用者。',
   })
-  async me(
-    @Req() request: AuthenticatedRequest,
-  ): Promise<AuthSessionData> {
-    const { user, roles } =
-      await this.authService.getCurrentUserWithRoles(request.user.id);
+  @ApiEnvelopeResponse({
+    status: HttpStatus.OK,
+    message: MESSAGES.CURRENT_USER_RETRIEVED,
+    data: AuthSessionDataDto,
+  })
+  @ApiErrorEnvelopeResponse(401, MESSAGES.TOKEN_INVALID)
+  async me(@Req() request: AuthenticatedRequest): Promise<AuthSessionData> {
+    const { user, roles } = await this.authService.getCurrentUserWithRoles(
+      request.user.id,
+    );
 
     return this.authResponseMapper.toSessionData(
       user,
@@ -127,6 +139,4 @@ export class AuthController {
       request.user.accessTokenExpiresAt,
     );
   }
- 
-
 }

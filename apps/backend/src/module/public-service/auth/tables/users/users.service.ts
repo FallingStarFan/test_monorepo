@@ -1,23 +1,17 @@
 // src/user/user.service.ts
 
 import {
-    ConflictException,
-    Injectable,
-    NotFoundException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-
-
-
-
 
 import { Prisma, PrismaService } from '../../../prisma.js';
 import type { CreateUserDto } from './dto/create-user.dto.js';
 import type { UpdateUserDto } from './dto/update-user.dto.js';
 
 import { pageArgs, toPage } from '@/common/pagination/paginate.js';
-
-
-
+import { MESSAGES } from '@/common/response/messages.js';
 
 @Injectable()
 export class UsersService {
@@ -83,11 +77,7 @@ export class UsersService {
   //   });
   // }
 
-  async findAllPageable(
-    page: number,
-    pageSize: number,
-    order: 'asc' | 'desc',
-  ) {
+  async findAllPageable(page: number, pageSize: number, order: 'asc' | 'desc') {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         ...pageArgs({ page, pageSize }),
@@ -110,7 +100,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({ message: MESSAGES.USER_NOT_FOUND });
     }
 
     return user;
@@ -186,7 +176,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({ message: MESSAGES.USER_NOT_FOUND });
     }
 
     return user;
@@ -200,7 +190,7 @@ export class UsersService {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException({ message: MESSAGES.EMAIL_ALREADY_EXISTS });
     }
 
     throw error;

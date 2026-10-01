@@ -489,3 +489,31 @@ Frontend Integration 完成
 ```
 
 以上條件完成後，才視為 API 修改完成。
+
+---
+
+# 17. 2026-09-30 Auth DTO 與 OpenAPI contract
+
+- Commit：未建立
+- 影響 API：`/api/auth/*`、`/api/users*`、`/api/roles*`
+- Backend build：PASS（`pnpm.cmd --filter test_backend build`）
+- Backend lint：PASS；仍有 4 個本次修改前已存在的 unused import warning
+- DTO unit test：PASS（2 個 test files、6 個 tests）
+- Swagger：PASS；以隔離的 3014 server 驗證所有已啟用 Auth 成功回應皆有 JSON schema，register 的 400／409 也有錯誤 envelope schema
+- Frontend OpenAPI generation：PASS；已重新產生 `generatedFromBackend/schema.d.ts`
+- Generated schema 單檔 typecheck：PASS
+- Frontend 全專案 typecheck：FAIL；既有 `_drafts/privacy/page.tsx` 與 `Sidebar.tsx` 含 invalid character，與本次產生檔無關
+- 實際 Auth HTTP／DB 流程：NOT TESTED；本次只啟動應用並讀取 `/openapi.json`，未建立或修改資料庫帳號
+
+---
+
+# 18. 2026-10-01 API 雙語回應訊息集中化
+
+- Commit：未建立
+- 影響 API：root、Auth、User、Role、UserRole、App、OAuthAccount、UserPassword、File、Notification；OAuth redirect route 不套 JSON envelope
+- 原始碼覆蓋稽核：PASS；所有 JSON controller route 均使用 `ApiEnvelopeResponse`、`ResponseMessage` 或明確的通用 fallback，且 `messages.ts` 外無 API 雙語物件硬編碼
+- Backend build：PASS（`pnpm.cmd --filter test_backend build`）
+- Backend lint：PASS；仍有 4 個既有 unused import warning
+- Backend unit test：PASS（3 個 test files、8 個 tests），包含成功訊息 metadata 與 fallback 行為
+- Swagger／Frontend OpenAPI generation：NOT TESTED；本次沒有重新啟動 server 或覆寫現有前端產生檔
+- 實際 HTTP／DB 流程：NOT TESTED；本次未呼叫會讀寫資料庫的 API

@@ -16,7 +16,6 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -28,6 +27,13 @@ import { AuthRolesService } from './auth-role.service.js';
 import { AssignRoleDto } from './dto/assign-role.dto.js';
 import { UserRolesService } from './user-roles.service.js';
 import { ApiResult } from '@/common/validation/api.decorator.js';
+import { ApiEnvelopeResponse } from '@/common/response/swagger-response.decorator.js';
+import { MESSAGES } from '@/common/response/messages.js';
+import { AuthRoleDto } from '../../dto/auth-response.dto.js';
+import {
+  UserRoleDto,
+  UserRoleWithRoleDto,
+} from './dto/user-role-response.dto.js';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -37,14 +43,8 @@ type AuthenticatedRequest = Request & {
 
 @ApiTags('Auth/Roles')
 @ApiBearerAuth()
-@ApiResult(HttpStatus.UNAUTHORIZED, {
-  en: 'Authentication required',
-  zh: '需要登入驗證',
-})
-@ApiResult(HttpStatus.FORBIDDEN, {
-  en: 'Permission denied',
-  zh: '沒有權限執行此操作',
-})
+@ApiResult(HttpStatus.UNAUTHORIZED, MESSAGES.AUTHENTICATION_REQUIRED)
+@ApiResult(HttpStatus.FORBIDDEN, MESSAGES.PERMISSION_DENIED)
 @UseGuards(JwtAuthGuard, RequireRoleGuard)
 @Controller('roles')
 export class UserRolesController {
@@ -58,17 +58,15 @@ export class UserRolesController {
    * 從經過 JWT 驗證的 request.user 取得目前使用者 ID。
    */
   @Get('me')
-  @ApiResult(HttpStatus.OK, {
-    en: 'My roles retrieved successfully',
-    zh: '取得目前登入者角色成功',
-  })
   @ApiOperation({
     summary: '取得目前登入者的角色',
     description: '取得目前登入者在所有 App 底下的角色。',
   })
-  @ApiResponse({
+  @ApiEnvelopeResponse({
     status: HttpStatus.OK,
-    description: '取得目前登入者角色成功',
+    message: MESSAGES.MY_ROLES_RETRIEVED,
+    data: AuthRoleDto,
+    isArray: true,
   })
   async getMyRoles(@Req() request: AuthenticatedRequest) {
     const roles = await this.authRoleService.getAuthRoles(request.user.id);
@@ -83,23 +81,17 @@ export class UserRolesController {
   @Get('users/:userId')
   @RequireStudioAdmin()
   @ApiOperation({ summary: '取得指定使用者的角色' })
-  @ApiResult(HttpStatus.OK, {
-    en: 'User roles retrieved successfully',
-    zh: '取得使用者角色成功',
+  @ApiResult(HttpStatus.BAD_REQUEST, MESSAGES.INVALID_UUID_FORMAT)
+  @ApiResult(HttpStatus.FORBIDDEN, MESSAGES.PERMISSION_DENIED)
+  @ApiEnvelopeResponse({
+    status: HttpStatus.OK,
+    message: MESSAGES.USER_ROLES_RETRIEVED,
+    data: UserRoleWithRoleDto,
+    isArray: true,
   })
-  @ApiResult(HttpStatus.BAD_REQUEST, {
-    en: 'Invalid user ID format',
-    zh: '使用者 ID 格式錯誤',
-  })
-  @ApiResult(HttpStatus.FORBIDDEN, {
-    en: 'Permission denied',
-    zh: '沒有管理員權限',
-  })
-  async findById(
-  @Param('userId', new ParseUUIDPipe()) userId: string,
-) {
-  return this.userRoleService.findByUser(userId);
-}
+  async findById(@Param('userId', new ParseUUIDPipe()) userId: string) {
+    return this.userRoleService.findByUser(userId);
+  }
 
   /**
    * POST /roles/users/:userId
@@ -108,10 +100,6 @@ export class UserRolesController {
   @Post('users/:userId')
   @HttpCode(HttpStatus.CREATED)
   @RequireStudioAdmin()
-  @ApiResult(HttpStatus.CREATED, {
-    en: 'Role assigned successfully',
-    zh: '角色指派成功',
-  })
   @ApiOperation({
     summary: '指派角色給使用者',
     description: '將指定角色授予目標使用者，需要管理員權限。',
@@ -120,6 +108,11 @@ export class UserRolesController {
     name: 'userId',
     description: '目標使用者 ID',
     format: 'uuid',
+  })
+  @ApiEnvelopeResponse({
+    status: HttpStatus.CREATED,
+    message: MESSAGES.ROLE_ASSIGNED,
+    data: UserRoleDto,
   })
   async assign(
     @Param('userId', new ParseUUIDPipe()) userId: string,
@@ -151,12 +144,17 @@ export class UserRolesController {
     description: '要移除的角色 ID',
     format: 'uuid',
   })
+  @ApiEnvelopeResponse({
+    status: HttpStatus.OK,
+    message: MESSAGES.ROLE_REVOKED,
+    data: UserRoleDto,
+  })
   async revoke(
     @Param('userId', new ParseUUIDPipe()) userId: string,
     @Param('roleId', new ParseUUIDPipe()) roleId: string,
   ) {
     const result = await this.userRoleService.revoke(userId, roleId);
 
-    return result
+    return result;
   }
 }

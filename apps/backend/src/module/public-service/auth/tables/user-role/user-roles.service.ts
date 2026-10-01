@@ -1,5 +1,10 @@
 import { PrismaService } from '@/module/public-service/prisma.js';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { MESSAGES } from '@/common/response/messages.js';
 
 @Injectable()
 export class UserRolesService {
@@ -18,7 +23,7 @@ export class UserRolesService {
 
     if (existing) {
       throw new ConflictException({
-        message: { en: 'User already has this role', zh: '使用者已擁有此角色' },
+        message: MESSAGES.USER_ALREADY_HAS_ROLE,
       });
     }
 
@@ -39,7 +44,7 @@ export class UserRolesService {
       });
     } catch {
       throw new NotFoundException({
-        message: { en: 'User does not have this role', zh: '使用者沒有此角色' },
+        message: MESSAGES.USER_ROLE_NOT_FOUND,
       });
     }
   }

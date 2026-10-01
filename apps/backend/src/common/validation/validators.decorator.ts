@@ -13,14 +13,18 @@ import {
   MinLength as ValidateMinLength,
   type ValidationOptions,
 } from 'class-validator';
+import { MESSAGES } from '@/common/response/messages.js';
 
 export { IsOptional } from 'class-validator';
 
 export function IsEmail(options?: ValidationOptions) {
-  return ValidateEmail({}, {
-    message: 'Email 格式不正確',
-    ...options,
-  });
+  return ValidateEmail(
+    {},
+    {
+      message: MESSAGES.INVALID_EMAIL_FORMAT.zh,
+      ...options,
+    },
+  );
 }
 
 export function IsString(options?: ValidationOptions) {
@@ -51,18 +55,16 @@ export function IsArray(options?: ValidationOptions) {
   });
 }
 
-export function IsUUID(options?: ValidationOptions) {  //  @IsUUID({ each: true }) 代表驗證陣列中的每個元素是否為有效的 UUID v4
+export function IsUUID(options?: ValidationOptions) {
+  //  @IsUUID({ each: true }) 代表驗證陣列中的每個元素是否為有效的 UUID v4
   return ValidateUUID('4', {
-    message: '$property 必須是有效的 UUID v4',
+    message: `${MESSAGES.INVALID_UUID_FORMAT.zh}（必須是 UUID v4）`,
     ...options,
     each: true,
   });
 }
 
-export function IsEnum(
-  values: object,
-  options?: ValidationOptions,
-) {
+export function IsEnum(values: object, options?: ValidationOptions) {
   return ValidateEnum(values, {
     message: '$property 不在允許的選項內',
     ...options,
@@ -76,30 +78,21 @@ export function IsInt(options?: ValidationOptions) {
   });
 }
 
-export function Min(
-  value: number,
-  options?: ValidationOptions,
-) {
+export function Min(value: number, options?: ValidationOptions) {
   return ValidateMin(value, {
     message: `$property 不可小於 ${value}`,
     ...options,
   });
 }
 
-export function MinLength(
-  length: number,
-  options?: ValidationOptions,
-) {
+export function MinLength(length: number, options?: ValidationOptions) {
   return ValidateMinLength(length, {
     message: `$property 至少需要 ${length} 個字元`,
     ...options,
   });
 }
 
-export function MaxLength(
-  length: number,
-  options?: ValidationOptions,
-) {
+export function MaxLength(length: number, options?: ValidationOptions) {
   return ValidateMaxLength(length, {
     message: `$property 不可超過 ${length} 個字元`,
     ...options,

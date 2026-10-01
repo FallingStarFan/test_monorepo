@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
 
@@ -8,23 +8,21 @@ import { ResponseInterceptor } from './common/response/response.interceptor.js';
 import env from './config/env.js';
 import { setupSwagger } from './config/swagger.config.js';
 import { ValidationPipe } from '@nestjs/common/pipes/index.js';
+import { MESSAGES } from './common/response/messages.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  
   app.setGlobalPrefix('api');
   app.use(cookieParser());
 
-
-  
   app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true,
-  }),
-);
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   app.enableCors({
     origin: env.corsOrigins,
@@ -50,10 +48,7 @@ async function bootstrap() {
     if (origin && !allowedOrigins.has(origin)) {
       return response.status(403).json({
         statusCode: 403,
-        message: {
-          en: 'Request origin is not allowed',
-          zh: '不允許此請求來源',
-        },
+        message: MESSAGES.REQUEST_ORIGIN_NOT_ALLOWED,
         data: null,
       });
     }
@@ -63,7 +58,7 @@ async function bootstrap() {
 
   setupSwagger(app);
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
 
   await app.listen(env.serverPort);
 

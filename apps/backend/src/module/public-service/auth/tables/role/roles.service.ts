@@ -5,12 +5,11 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
+import { MESSAGES } from '@/common/response/messages.js';
 
 @Injectable()
 export class RolesService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // 取得指定 App 的所有 Role
   async findAllByApp(appId: string) {
@@ -34,18 +33,14 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException({ message: MESSAGES.ROLE_NOT_FOUND });
     }
 
     return role;
   }
 
   // 建立 Role
-  async create(
-    appId: string,
-    name: string,
-    description?: string,
-  ) {
+  async create(appId: string, name: string, description?: string) {
     const app = await this.prisma.app.findUnique({
       where: {
         id: appId,
@@ -53,7 +48,7 @@ export class RolesService {
     });
 
     if (!app) {
-      throw new NotFoundException('App not found');
+      throw new NotFoundException({ message: MESSAGES.APP_NOT_FOUND });
     }
 
     const existingRole = await this.prisma.role.findUnique({
@@ -66,9 +61,7 @@ export class RolesService {
     });
 
     if (existingRole) {
-      throw new ConflictException(
-        'Role already exists in this App',
-      );
+      throw new ConflictException({ message: MESSAGES.ROLE_ALREADY_EXISTS });
     }
 
     return this.prisma.role.create({
@@ -101,9 +94,7 @@ export class RolesService {
       });
 
       if (existingRole) {
-        throw new ConflictException(
-          'Role already exists in this App',
-        );
+        throw new ConflictException({ message: MESSAGES.ROLE_ALREADY_EXISTS });
       }
     }
 

@@ -5,13 +5,11 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
-
+import { MESSAGES } from '@/common/response/messages.js';
 
 @Injectable()
 export class AppsService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // 取得所有 App
   async findAll() {
@@ -48,10 +46,7 @@ export class AppsService {
 
     if (!app) {
       throw new NotFoundException({
-        message: {
-          en: 'App not found',
-          zh: '找不到指定的 App',
-        },
+        message: MESSAGES.APP_NOT_FOUND,
       });
     }
 
@@ -65,10 +60,7 @@ export class AppsService {
    * 使用者會收到 500 或難懂的 Prisma 例外訊息；
    * 先查一次可以回傳語意明確的 409，前端才能正確提示「名稱重複」。
    */
-  async create(
-    name: string,
-    description?: string,
-  ) {
+  async create(name: string, description?: string) {
     const existing = await this.prisma.app.findUnique({
       where: {
         name,
@@ -77,10 +69,7 @@ export class AppsService {
 
     if (existing) {
       throw new ConflictException({
-        message: {
-          en: 'App name already exists',
-          zh: 'App 名稱已存在',
-        },
+        message: MESSAGES.APP_NAME_ALREADY_EXISTS,
       });
     }
 
@@ -111,10 +100,7 @@ export class AppsService {
 
       if (existing && existing.id !== id) {
         throw new ConflictException({
-          message: {
-            en: 'App name already exists',
-            zh: 'App 名稱已存在',
-          },
+          message: MESSAGES.APP_NAME_ALREADY_EXISTS,
         });
       }
     }
@@ -144,12 +130,11 @@ export class AppsService {
   async remove(id: string) {
     const app = await this.findByIdOrFail(id);
 
-    const cascadedRoleCount =
-      await this.prisma.role.count({
-        where: {
-          appId: app.id,
-        },
-      });
+    const cascadedRoleCount = await this.prisma.role.count({
+      where: {
+        appId: app.id,
+      },
+    });
 
     const deleted = await this.prisma.app.delete({
       where: {

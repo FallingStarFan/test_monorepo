@@ -191,36 +191,36 @@ model Session {
   @@schema("auth")
 }
 
-// ============================================================
-// Permission
-// ============================================================
+// // ============================================================
+// // Permission
+// // ============================================================
 
-// 細粒度權限碼，例如 permission:read、billing:plan:write。
-//
-// 刻意與 Role 放在同一個 auth schema：Prisma 的關聯只能建立在同一個 schema
-// 內的兩個 model 之間，RolePermission 要同時關聯 Role 與 Permission，
-// 一旦把 Permission 拆到別的 schema，RolePermission 就會被迫跨 schema 關聯，
-// 多檔案 schema 的關聯解析會直接失敗。因此這裡以「資料表歸屬」優先於
-// 「語意歸屬」來決定 schema。
-model Permission {
+// // 細粒度權限碼，例如 permission:read、billing:plan:write。
+// //
+// // 刻意與 Role 放在同一個 auth schema：Prisma 的關聯只能建立在同一個 schema
+// // 內的兩個 model 之間，RolePermission 要同時關聯 Role 與 Permission，
+// // 一旦把 Permission 拆到別的 schema，RolePermission 就會被迫跨 schema 關聯，
+// // 多檔案 schema 的關聯解析會直接失敗。因此這裡以「資料表歸屬」優先於
+// // 「語意歸屬」來決定 schema。
+// model Permission {
 
-  id          String   @id @default(uuid()) @db.Uuid
+//   id          String   @id @default(uuid()) @db.Uuid
 
-  // 權限碼，採 resource:action 形式，讓 Guard 能以字串直接比對，
-  // 不需要額外的 id 對照表就能讀懂「這個端點需要什麼權限」
-  code        String   @unique
-  name        String
-  description String?
+//   // 權限碼，採 resource:action 形式，讓 Guard 能以字串直接比對，
+//   // 不需要額外的 id 對照表就能讀懂「這個端點需要什麼權限」
+//   code        String   @unique
+//   name        String
+//   description String?
 
-  // 擁有此權限的 Role
-  roles       RolePermission[]
+//   // 擁有此權限的 Role
+//   roles       RolePermission[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
 
-  @@map("permissions")
-  @@schema("auth")
-}
+//   @@map("permissions")
+//   @@schema("auth")
+// }
 
 // ============================================================
 // Role Permission
@@ -239,7 +239,7 @@ model RolePermission {
   permissionId String @db.Uuid
 
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  // permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   createdAt    DateTime @default(now())
 

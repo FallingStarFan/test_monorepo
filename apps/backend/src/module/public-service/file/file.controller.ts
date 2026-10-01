@@ -1,41 +1,41 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Inject,
-    Param,
-    Patch,
-    Post,
-    Query,
-    UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 
-
 import {
-    ApiBody,
-    ApiOperation,
-    ApiParam,
-    ApiQuery,
-    ApiResponse,
-    ApiTags,
-    ApiUnauthorizedResponse,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { randomUUID } from 'node:crypto';
 
 import type {
-    CreateStoredFileMetaRequest,
-    UpdateStoredFileMetaRequest,
+  CreateStoredFileMetaRequest,
+  UpdateStoredFileMetaRequest,
 } from '@test/shared';
-
 
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard.js';
 import {
-    FILE_STORAGE,
-    type FileStorage,
+  FILE_STORAGE,
+  type FileStorage,
 } from './intergration/file-storage.provider.js';
 import { StoredFileMetaService } from './store-file-meta/stored-file-meta.service.js';
+import { MESSAGES } from '@/common/response/messages.js';
+import { ResponseMessage } from '@/common/response/response-message.decorator.js';
 
 @ApiTags('File')
 @Controller('file')
@@ -90,6 +90,7 @@ export class FileController {
     status: 201,
     description: '成功建立 R2 Presigned Upload URL。',
   })
+  @ResponseMessage(MESSAGES.FILE_UPLOAD_URL_CREATED)
   async createUploadUrl(
     @Body()
     body: {
@@ -175,6 +176,7 @@ export class FileController {
     status: 200,
     description: '成功建立 R2 Presigned Download URL。',
   })
+  @ResponseMessage(MESSAGES.FILE_DOWNLOAD_URL_CREATED)
   async createDownloadUrl(
     @Query('objectKey') objectKey: string,
     @Query('expiresIn') expiresIn?: string,
@@ -210,6 +212,7 @@ export class FileController {
     status: 200,
     description: '成功取得關聯檔案。',
   })
+  @ResponseMessage(MESSAGES.RELATED_FILES_RETRIEVED)
   findByRelation(
     @Query('relationType') relationType: string,
     @Query('relationId') relationId: string,
@@ -235,6 +238,7 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
+  @ResponseMessage(MESSAGES.FILE_RETRIEVED)
   findByObjectKey(@Param('objectKey') objectKey: string) {
     return this.storedFileMetaService.findByObjectKey(objectKey);
   }
@@ -257,6 +261,7 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
+  @ResponseMessage(MESSAGES.FILE_RETRIEVED)
   findById(@Param('id') id: string) {
     return this.storedFileMetaService.findById(id);
   }
@@ -270,6 +275,7 @@ export class FileController {
     status: 200,
     description: '成功取得 File Metadata。',
   })
+  @ResponseMessage(MESSAGES.FILES_RETRIEVED)
   findActive() {
     return this.storedFileMetaService.findActive();
   }
@@ -356,6 +362,7 @@ export class FileController {
     status: 201,
     description: '成功建立 File Metadata。',
   })
+  @ResponseMessage(MESSAGES.FILE_CREATED)
   create(@Body() body: CreateStoredFileMetaRequest) {
     return this.storedFileMetaService.create(body);
   }
@@ -382,6 +389,7 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
+  @ResponseMessage(MESSAGES.FILE_UPDATED)
   update(@Param('id') id: string, @Body() body: UpdateStoredFileMetaRequest) {
     return this.storedFileMetaService.update(id, body);
   }
@@ -409,6 +417,7 @@ export class FileController {
     status: 404,
     description: '找不到指定的 File Metadata。',
   })
+  @ResponseMessage(MESSAGES.FILE_DELETED)
   softDelete(@Param('id') id: string) {
     return this.storedFileMetaService.softDelete(id);
   }

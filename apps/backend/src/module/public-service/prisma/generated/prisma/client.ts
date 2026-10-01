@@ -77,11 +77,6 @@ export type OauthAccount = Prisma.OauthAccountModel
  */
 export type Session = Prisma.SessionModel
 /**
- * Model Permission
- * 
- */
-export type Permission = Prisma.PermissionModel
-/**
  * Model RolePermission
  * 
  */

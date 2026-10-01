@@ -1,25 +1,26 @@
-
 import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    Patch,
-    Post,
-    Query,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
 
 import {
-    ApiBody,
-    ApiOperation,
-    ApiParam,
-    ApiResponse,
-    ApiTags,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
 
 import type { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 import { AppNotificationService } from './tables/app-notification/app-notification.service.js';
 import { EmailNotificationLogService } from './tables/email-notification-log/email-notification-log.service.js';
+import { MESSAGES } from '@/common/response/messages.js';
+import { ResponseMessage } from '@/common/response/response-message.decorator.js';
 
 @ApiTags('Notification')
 @Controller('notification')
@@ -47,9 +48,8 @@ export class NotificationController {
     status: 200,
     description: '成功取得使用者的 App Notification。',
   })
-  findAppNotifications(
-    @Param('userId') userId: string,
-  ) {
+  @ResponseMessage(MESSAGES.APP_NOTIFICATIONS_RETRIEVED)
+  findAppNotifications(@Param('userId') userId: string) {
     return this.appNotificationService.findByUserId(userId);
   }
 
@@ -71,9 +71,8 @@ export class NotificationController {
     status: 404,
     description: '找不到指定的 App Notification。',
   })
-  findAppNotification(
-    @Param('id') id: string,
-  ) {
+  @ResponseMessage(MESSAGES.APP_NOTIFICATION_RETRIEVED)
+  findAppNotification(@Param('id') id: string) {
     return this.appNotificationService.findById(id);
   }
 
@@ -133,6 +132,7 @@ export class NotificationController {
     status: 201,
     description: '成功建立 App Notification。',
   })
+  @ResponseMessage(MESSAGES.APP_NOTIFICATION_CREATED)
   createAppNotification(
     @Body()
     body: {
@@ -166,9 +166,8 @@ export class NotificationController {
     status: 404,
     description: '找不到指定的 App Notification。',
   })
-  markAppNotificationAsRead(
-    @Param('id') id: string,
-  ) {
+  @ResponseMessage(MESSAGES.APP_NOTIFICATION_READ)
+  markAppNotificationAsRead(@Param('id') id: string) {
     return this.appNotificationService.markAsRead(id);
   }
 
@@ -185,15 +184,16 @@ export class NotificationController {
     status: 200,
     description: '成功取得 Email Notification Log。',
   })
-   async findAll(@Query() query: PageQueryDto) {
-      const emailLogs = await this.emailNotificationLogService.findAllPageable(
-        query.page,
-        query.pageSize,
-        query.order,
-      );
-  
-      return emailLogs;
-    }
+  @ResponseMessage(MESSAGES.EMAIL_LOGS_RETRIEVED)
+  async findAll(@Query() query: PageQueryDto) {
+    const emailLogs = await this.emailNotificationLogService.findAllPageable(
+      query.page,
+      query.pageSize,
+      query.order,
+    );
+
+    return emailLogs;
+  }
 
   @Get('email-logs/:id')
   @ApiOperation({
@@ -213,17 +213,18 @@ export class NotificationController {
     status: 404,
     description: '找不到指定的 Email Notification Log。',
   })
+  @ResponseMessage(MESSAGES.EMAIL_LOG_RETRIEVED)
   async findEmailNotificationLogByPage(
     @Param('id') id: string,
     @Query() query: PageQueryDto,
   ) {
-      const emailLogs = await this.emailNotificationLogService.findByIdPageable(
-        id,
-        query.page,
-        query.pageSize,
-        query.order,
-      );
-  
-      return emailLogs;
-    }
+    const emailLogs = await this.emailNotificationLogService.findByIdPageable(
+      id,
+      query.page,
+      query.pageSize,
+      query.order,
+    );
+
+    return emailLogs;
+  }
 }

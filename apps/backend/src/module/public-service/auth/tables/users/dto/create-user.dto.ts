@@ -1,4 +1,3 @@
-
 // src/user/dto/create-user.dto.ts
 
 import {
@@ -14,8 +13,6 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserStatus } from '@/module/public-service/prisma.js';
 
-
-
 export class CreateUserDto {
   @ApiPropertyOptional({
     example: 'user@example.com',
@@ -27,8 +24,8 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({
     example: false,
-    default: false,
-    description: 'Whether the email has been verified / Email 是否已驗證',
+    description:
+      'Whether the email has been verified / Email 是否已驗證；未傳入時為 false',
   })
   @IsOptional()
   @IsBoolean()
@@ -67,12 +64,10 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({
     example: UserStatus.ACTIVE,
-    default: UserStatus.ACTIVE,
     enum: UserStatus,
-    description: 'User status / 使用者狀態',
+    description: 'User status / 使用者狀態；未傳入時為 ACTIVE',
   })
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
 }
-

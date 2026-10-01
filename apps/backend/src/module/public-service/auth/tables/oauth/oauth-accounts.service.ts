@@ -1,11 +1,10 @@
-
 import {
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService, Prisma } from '@/module/public-service/prisma.js';
-
+import { MESSAGES } from '@/common/response/messages.js';
 
 @Injectable()
 export class OauthAccountsService {
@@ -21,10 +20,7 @@ export class OauthAccountsService {
    * 例如：
    * Google + 123456789
    */
-  async findByProviderAccount(
-    provider: string,
-    providerAccountId: string,
-  ) {
+  async findByProviderAccount(provider: string, providerAccountId: string) {
     return this.prisma.oauthAccount.findUnique({
       where: {
         provider_providerAccountId: {
@@ -79,10 +75,7 @@ export class OauthAccountsService {
         error.code === 'P2002'
       ) {
         throw new ConflictException({
-          message: {
-            en: 'OAuth account already exists',
-            zh: 'OAuth 帳號已經存在',
-          },
+          message: MESSAGES.OAUTH_ACCOUNT_ALREADY_EXISTS,
         });
       }
 
@@ -104,10 +97,7 @@ export class OauthAccountsService {
 
     if (!account) {
       throw new NotFoundException({
-        message: {
-          en: 'OAuth account not found',
-          zh: '找不到 OAuth 帳號',
-        },
+        message: MESSAGES.OAUTH_ACCOUNT_NOT_FOUND,
       });
     }
 
@@ -120,4 +110,3 @@ export class OauthAccountsService {
     };
   }
 }
-

@@ -7,16 +7,17 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { MESSAGES } from '@/common/response/messages.js';
 
 export const ACCESS_TOKEN_COOKIE = 'access_token';
 
 type AccessTokenPayload = {
-  sub: string;          // 使用者 ID
-  type: 'access';       // 自訂：區分 access / refresh token
-  iat?: number;         // 簽發時間，Unix 秒數
-  exp?: number;         // 過期時間，Unix 秒數
-  jti?: string;         // Token ID，可用於撤銷或追蹤特定 token
-  iss?: string;         // 簽發者，例如 api.xingfan-studio.com
+  sub: string; // 使用者 ID
+  type: 'access'; // 自訂：區分 access / refresh token
+  iat?: number; // 簽發時間，Unix 秒數
+  exp?: number; // 過期時間，Unix 秒數
+  jti?: string; // Token ID，可用於撤銷或追蹤特定 token
+  iss?: string; // 簽發者，例如 api.xingfan-studio.com
   aud?: string | string[]; // 使用對象
 };
 
@@ -34,14 +35,14 @@ export class JwtAuthGuard implements CanActivate {
   constructor(private readonly jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<AuthenticatedRequest>();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
     const token: unknown = request.cookies?.[ACCESS_TOKEN_COOKIE];
 
     if (typeof token !== 'string' || !token) {
-      throw new UnauthorizedException('尚未登入');
+      throw new UnauthorizedException({
+        message: MESSAGES.AUTHENTICATION_REQUIRED,
+      });
     }
 
     try {
@@ -57,7 +58,7 @@ export class JwtAuthGuard implements CanActivate {
         !Number.isSafeInteger(payload.exp) ||
         payload.exp <= 0
       ) {
-        throw new UnauthorizedException('無效的登入憑證');
+        throw new UnauthorizedException({ message: MESSAGES.TOKEN_INVALID });
       }
 
       const hasValidIssuedAt =
@@ -72,14 +73,14 @@ export class JwtAuthGuard implements CanActivate {
           : null,
         accessTokenExpiresAt: new Date(payload.exp * 1000),
         accessTokenId:
-          typeof payload.jti === 'string' && payload.jti
-            ? payload.jti
-            : null,
+          typeof payload.jti === 'string' && payload.jti ? payload.jti : null,
       };
 
       return true;
     } catch {
-      throw new UnauthorizedException('登入憑證無效或已過期');
+      throw new UnauthorizedException({
+        message: MESSAGES.TOKEN_INVALID_OR_EXPIRED,
+      });
     }
   }
 }

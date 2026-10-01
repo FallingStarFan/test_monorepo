@@ -1,36 +1,25 @@
 import {
-    Body,
-    Controller,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
+  Body,
+  Controller,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
 
-import {
-    ApiBody,
-    ApiOperation,
-    ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { UserPasswordsService } from './user-passwords.service.js';
 
 import { ApiResponse } from '@/common/response/response.util.js';
-
-class CreatePasswordDto {
-  password!: string;
-}
-
-class UpdatePasswordDto {
-  password!: string;
-}
+import { ApiEnvelopeResponse } from '@/common/response/swagger-response.decorator.js';
+import { MESSAGES } from '@/common/response/messages.js';
+import { PasswordReferenceDto, SetPasswordDto } from './dto/password.dto.js';
 
 @ApiTags('User Password')
 @Controller('users/:userId/password')
 export class UserPasswordsController {
-  constructor(
-    private readonly userPasswordService: UserPasswordsService,
-  ) {}
+  constructor(private readonly userPasswordService: UserPasswordsService) {}
 
   /**
    * Create password.
@@ -52,16 +41,15 @@ Set a password for a user.
 為使用者設定密碼。
 `,
   })
-  @ApiBody({
-    schema: {
-      example: {
-        password: 'StrongPassword123!',
-      },
-    },
+  @ApiBody({ type: SetPasswordDto })
+  @ApiEnvelopeResponse({
+    status: 201,
+    message: MESSAGES.PASSWORD_CREATED,
+    data: PasswordReferenceDto,
   })
   async create(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() dto: CreatePasswordDto,
+    @Body() dto: SetPasswordDto,
   ) {
     /**
      * 注意：
@@ -79,27 +67,19 @@ Set a password for a user.
      */
     const passwordHash = dto.password;
 
-    const password =
-      await this.userPasswordService.create(
-        userId,
-        passwordHash,
-      );
+    const password = await this.userPasswordService.create(
+      userId,
+      passwordHash,
+    );
 
     /**
      * 為什麼：
      * passwordHash 絕對不能回傳給前端。
      */
-    return ApiResponse(
-      201,
-      {
-        en: 'Password created successfully',
-        zh: '建立密碼成功',
-      },
-      {
-        id: password.id,
-        userId: password.userId,
-      },
-    );
+    return ApiResponse(201, MESSAGES.PASSWORD_CREATED, {
+      id: password.id,
+      userId: password.userId,
+    });
   }
 
   /**
@@ -117,35 +97,26 @@ Update user's password.
 更新使用者密碼。
 `,
   })
-  @ApiBody({
-    schema: {
-      example: {
-        password: 'NewStrongPassword123!',
-      },
-    },
+  @ApiBody({ type: SetPasswordDto })
+  @ApiEnvelopeResponse({
+    status: 200,
+    message: MESSAGES.PASSWORD_UPDATED,
+    data: PasswordReferenceDto,
   })
   async update(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() dto: UpdatePasswordDto,
+    @Body() dto: SetPasswordDto,
   ) {
     const passwordHash = dto.password;
 
-    const password =
-      await this.userPasswordService.update(
-        userId,
-        passwordHash,
-      );
-
-    return ApiResponse(
-      200,
-      {
-        en: 'Password updated successfully',
-        zh: '更新密碼成功',
-      },
-      {
-        id: password.id,
-        userId: password.userId,
-      },
+    const password = await this.userPasswordService.update(
+      userId,
+      passwordHash,
     );
+
+    return ApiResponse(200, MESSAGES.PASSWORD_UPDATED, {
+      id: password.id,
+      userId: password.userId,
+    });
   }
 }

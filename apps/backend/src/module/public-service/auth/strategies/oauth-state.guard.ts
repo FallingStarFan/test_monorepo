@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { MESSAGES } from '@/common/response/messages.js';
 import { timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
 
@@ -59,10 +60,7 @@ function validateOAuthState(context: ExecutionContext): string {
  */
 function invalidState() {
   return new UnauthorizedException({
-    message: {
-      en: 'Invalid OAuth state',
-      zh: 'OAuth state 驗證失敗',
-    },
+    message: MESSAGES.OAUTH_STATE_INVALID,
   });
 }
 

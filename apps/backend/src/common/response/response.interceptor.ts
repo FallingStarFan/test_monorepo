@@ -4,10 +4,13 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { Response } from 'express';
 import { map, type Observable } from 'rxjs';
 
-import type { ApiResponse } from '@test/shared';
+import type { ApiMessage, ApiResponse } from '@test/shared';
+import { MESSAGES } from './messages.js';
+import { RESPONSE_MESSAGE_KEY } from './response-message.decorator.js';
 
 function normalizeJson(value: unknown): unknown {
   if (typeof value === 'bigint') return value.toString();
@@ -35,8 +38,15 @@ function isApiResponse(value: unknown): value is ApiResponse<unknown> {
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const response = context.switchToHttp().getResponse<Response>();
+    const message =
+      this.reflector.getAllAndOverride<ApiMessage>(RESPONSE_MESSAGE_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? MESSAGES.OPERATION_SUCCESS;
 
     return next.handle().pipe(
       map((value: unknown) => {
@@ -47,10 +57,7 @@ export class ResponseInterceptor implements NestInterceptor {
 
         return {
           statusCode: response.statusCode,
-          message: {
-            en: 'Request successful',
-            zh: '請求成功',
-          },
+          message,
           data: normalizeJson(value ?? null),
         } satisfies ApiResponse<unknown>;
       }),
